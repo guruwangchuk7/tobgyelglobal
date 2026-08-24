@@ -14,28 +14,29 @@ export async function POST(request: Request) {
 
     const recipient = "info@tobgyelglobalxpos.com";
     
-    // Web3Forms / Formspree Endpoint fallback for direct delivery to info@tobgyelglobalxpos.com
+    // Direct submission via FormSubmit service targeting info@tobgyelglobalxpos.com
     try {
-      await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch(`https://formsubmit.co/ajax/${recipient}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
         body: JSON.stringify({
-          access_key: "tobgyel-global-expos-contact",
-          to_email: recipient,
-          from_name: name,
-          reply_to: email,
-          subject: subject || `Website Inquiry from ${name}`,
-          message: `Sender Name: ${name}\nSender Email: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
+          name: name,
+          email: email,
+          _subject: subject || `Website Inquiry from ${name}`,
+          _template: "table",
+          _captcha: "false",
+          message: message,
         }),
       });
-    } catch {
-      // Ignore external delivery failure in local testing mode
-    }
 
-    console.log(`[CONTACT FORM DISPATCH] To: ${recipient} | From: ${name} (${email}) | Subject: ${subject}`);
+      const result = await response.json();
+      console.log(`[FORMSUBMIT RESPONSE]`, result);
+    } catch (err) {
+      console.error("[FORMSUBMIT ERROR]", err);
+    }
 
     return NextResponse.json({
       success: true,
