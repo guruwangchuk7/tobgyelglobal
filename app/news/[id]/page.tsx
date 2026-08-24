@@ -127,7 +127,7 @@ export default async function NewsDetailPage({
             <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 space-y-1">
               <p className="font-bold text-slate-900">Media &amp; Press Contact</p>
               <p>Tobgyel Global Expos Press Bureau • Phuentsholing, Bhutan</p>
-              <p>Email: <a href="mailto:media@tobgyelglobalexpos.com" className="text-[#0A4D8C] font-semibold underline">media@tobgyelglobalexpos.com</a></p>
+              <p>Email: <a href="mailto:info@tobgyelglobalxpos.com" className="text-[#0A4D8C] font-semibold underline">info@tobgyelglobalxpos.com</a></p>
             </div>
           </div>
 

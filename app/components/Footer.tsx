@@ -94,14 +94,19 @@ export default function Footer() {
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                 Talk to us
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
+              <div className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed space-y-0.5">
                 <a href={`tel:${contact.phonePrimary}`} className="hover:text-[#EAA500] block py-0.5">
                   {contact.phonePrimary}
                 </a>
+                {contact.phoneSecondary && (
+                  <a href={`tel:${contact.phoneSecondary}`} className="hover:text-[#EAA500] block py-0.5">
+                    {contact.phoneSecondary}
+                  </a>
+                )}
                 <a href={`mailto:${contact.emailGeneral}`} className="hover:text-[#EAA500] block py-0.5 break-all">
                   {contact.emailGeneral}
                 </a>
-              </p>
+              </div>
             </div>
 
             {/* 5. Mobile Social Icons */}
@@ -157,9 +162,19 @@ export default function Footer() {
                   <div className="p-2 rounded-full bg-slate-800/80 text-white shrink-0">
                     <Phone className="w-4 h-4 fill-current" />
                   </div>
-                  <a href={`tel:${contact.phonePrimary}`} className="hover:text-[#EAA500] transition-colors py-1">
-                    {contact.phonePrimary}
-                  </a>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a href={`tel:${contact.phonePrimary}`} className="hover:text-[#EAA500] transition-colors py-1">
+                      {contact.phonePrimary}
+                    </a>
+                    {contact.phoneSecondary && (
+                      <>
+                        <span className="text-slate-500">/</span>
+                        <a href={`tel:${contact.phoneSecondary}`} className="hover:text-[#EAA500] transition-colors py-1">
+                          {contact.phoneSecondary}
+                        </a>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -175,8 +190,8 @@ export default function Footer() {
                   <div className="p-2 rounded-full bg-slate-800/80 text-white shrink-0">
                     <GlobeIcon className="w-4 h-4" />
                   </div>
-                  <a href={`https://${contact.websiteUrl || "www.tobgyelglobalexpos.bt"}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#EAA500] transition-colors py-1 break-all">
-                    {contact.websiteUrl || "www.tobgyelglobalexpos.bt"}
+                  <a href={`https://${contact.websiteUrl || "www.tobgyelglobalxpos.com"}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#EAA500] transition-colors py-1 break-all">
+                    {contact.websiteUrl || "www.tobgyelglobalxpos.com"}
                   </a>
                 </div>
               </div>

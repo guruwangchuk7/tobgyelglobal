@@ -153,7 +153,7 @@ export default function RegulationsPage() {
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm font-bold">
               <a
-                href="mailto:regulations@tobgyelglobalexpos.com"
+                href="mailto:info@tobgyelglobalxpos.com"
                 className="w-full sm:w-auto px-6 py-3.5 rounded-lg bg-[#EAA500] hover:bg-[#c98e00] active:bg-[#aa7800] text-[#03142A] uppercase tracking-wider transition-colors shadow-md inline-flex items-center justify-center gap-2 min-h-[48px]"
               >
                 <PhoneCall className="w-4 h-4" />

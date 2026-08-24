@@ -269,7 +269,7 @@ export default function AdminPage() {
       image: editingNews.image || "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80",
       excerpt: editingNews.excerpt || "",
       content: editingNews.content || [editingNews.excerpt || ""],
-      mediaContactEmail: editingNews.mediaContactEmail || "media@tobgyelglobalexpos.bt",
+      mediaContactEmail: editingNews.mediaContactEmail || "info@tobgyelglobalxpos.com",
       status: editingNews.status || "Published",
       featuredOnHome: editingNews.featuredOnHome !== false,
       updatedAt: new Date().toLocaleDateString(),
@@ -893,7 +893,7 @@ export default function AdminPage() {
                         image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80",
                         excerpt: "",
                         content: [""],
-                        mediaContactEmail: "media@tobgyelglobalexpos.bt",
+                        mediaContactEmail: "info@tobgyelglobalxpos.com",
                         status: "Published",
                         featuredOnHome: true,
                       });
@@ -1380,7 +1380,7 @@ export default function AdminPage() {
                         <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Website URL Text</label>
                         <input
                           type="text"
-                          value={contactConfig.websiteUrl || "www.tobgyelglobalexpos.bt"}
+                          value={contactConfig.websiteUrl || "www.tobgyelglobalxpos.com"}
                           onChange={(e) => setContactConfig({ ...contactConfig, websiteUrl: e.target.value })}
                           className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
                         />
