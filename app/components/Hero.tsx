@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { User, Handshake, Users, Globe, Calendar, MapPin, TrendingUp } from "lucide-react";
 import { getCMSHeroConfig, INITIAL_HERO, HeroConfigCMS } from "@/app/lib/cmsStore";
+import CountdownTimer from "@/app/components/CountdownTimer";
 
 const iconMap: Record<string, typeof Globe> = {
   Globe,
@@ -60,7 +61,7 @@ export default function Hero() {
             {config.subtitle}
           </p>
 
-          {/* CTA Buttons with proper page routing to dedicated forms & full touch area on mobile */}
+          {/* CTA Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-stretch sm:items-center">
             {/* Button 1: Exhibitor */}
             <Link

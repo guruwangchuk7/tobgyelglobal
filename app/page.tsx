@@ -1,6 +1,7 @@
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import UpcomingEvents from "./components/UpcomingEvents";
+import ProductsAds from "./components/ProductsAds";
 import InfoHub from "./components/InfoHub";
 import Partners from "./components/Partners";
 import NewsUpdates from "./components/NewsUpdates";
@@ -18,6 +19,7 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <UpcomingEvents from="home" />
+        <ProductsAds />
         <InfoHub />
         <Partners />
         <NewsUpdates from="home" />

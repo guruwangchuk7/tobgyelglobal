@@ -140,6 +140,19 @@ export interface PartnersCMS {
   partners: Array<{ name: string; category: string }>;
 }
 
+export interface ProductAdCMS {
+  id: string;
+  title: string;
+  companyName: string;
+  category: "Food & Organic" | "Machinery & Tech" | "Handicrafts & Luxury" | "Services & Tourism";
+  image: string;
+  description: string;
+  badgeTag: string;
+  ctaText: string;
+  ctaUrl: string;
+  active: boolean;
+}
+
 const CMS_KEYS = {
   EVENTS: "tobgyel_cms_events",
   NEWS: "tobgyel_cms_news",
@@ -152,7 +165,60 @@ const CMS_KEYS = {
   WHY_EXHIBIT: "tobgyel_cms_why_exhibit",
   PARTICIPANTS: "tobgyel_cms_participants",
   VISIT: "tobgyel_cms_visit",
+  PRODUCT_ADS: "tobgyel_cms_product_ads",
+  PAGE_VIEWS: "tobgyel_cms_page_views",
 };
+
+export const INITIAL_PRODUCT_ADS: ProductAdCMS[] = [
+  {
+    id: "ad-1",
+    title: "Organic Bhutanese Cordyceps & Herbal Tea Range",
+    companyName: "Himalayan Bio Products Bhutan",
+    category: "Food & Organic",
+    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80",
+    description: "Premium wild-harvested Cordyceps Sinensis and high-altitude organic green herbal infusions certified by Bhutan Food Authority.",
+    badgeTag: "Featured Exhibitor Ad",
+    ctaText: "Inquire Booth Samples",
+    ctaUrl: "/register/exhibitor",
+    active: true,
+  },
+  {
+    id: "ad-2",
+    title: "Solar Agri-Machinery & Micro-Hydro Systems",
+    companyName: "Druk Green Tech Solutions Ltd.",
+    category: "Machinery & Tech",
+    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+    description: "Eco-friendly solar powered grain dryers, mountain farm tractors, and zero-emission micro-hydro electricity generators.",
+    badgeTag: "Tech Showcase",
+    ctaText: "Request Tech Demo",
+    ctaUrl: "/register/exhibitor",
+    active: true,
+  },
+  {
+    id: "ad-3",
+    title: "Hand-Woven Royal Silk Kishuthara Textiles",
+    companyName: "Thimphu Heritage Weavers Guild",
+    category: "Handicrafts & Luxury",
+    image: "https://images.unsplash.com/photo-1606744888344-493238951221?auto=format&fit=crop&w=800&q=80",
+    description: "Exquisite traditional Bhutanese handloom weaves, silk scarves, and cultural artifact collectibles for global collectors.",
+    badgeTag: "Heritage Crafts",
+    ctaText: "View Collection",
+    ctaUrl: "/register/visitor",
+    active: true,
+  },
+  {
+    id: "ad-4",
+    title: "VIP Exhibition Logistics & Paro Flight Concierge",
+    companyName: "Dragon Express Freight & Travel",
+    category: "Services & Tourism",
+    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
+    description: "Customs dry-port clearance, refrigerated display transport, and discounted Drukair / Bhutan Airlines delegate bookings.",
+    badgeTag: "Official Partner",
+    ctaText: "Book Travel Package",
+    ctaUrl: "/visit",
+    active: true,
+  },
+];
 
 export const INITIAL_WHY_EXHIBIT: WhyExhibitCMS = {
   title: "WHY EXHIBIT?",
@@ -204,6 +270,35 @@ export const INITIAL_PARTNERS: PartnersCMS = {
 // Initial Seed Data (Pre-populated from hardcoded data so public site never breaks)
 
 export const INITIAL_EVENTS: TradeEventCMS[] = [
+  {
+    id: "himalayan-food-trade-innovation-expo-2026",
+    slug: "himalayan-food-trade-innovation-expo-2026",
+    title: "HIMALAYAN FOOD, TRADE & INNOVATION EXPO",
+    category: "Trade • Technology • Tourism • Experience",
+    date: "Dec 30, 2026 – Jan 3, 2027 (5 Days)",
+    location: "Samtse, Bhutan",
+    venue: "Samtse International Exhibition Ground, Samtse, Bhutan",
+    image: "/himalayan-food-trade-innovation-expo.png",
+    description: "Premier tri-nation exhibition (Bhutan, India & Nepal) connecting Agriculture & Food Trade, Machinery & Technology, Culinary Training, Tourism & Adventure, and Youth & Digital Experience.",
+    highlights: [
+      "BHUTAN • INDIA • NEPAL International Pavilions",
+      "AGRICULTURE & FOOD TRADE: Promoting local produce & agri-business",
+      "MACHINERY & TECHNOLOGY: Showcasing equipment & smart solutions",
+      "CULINARY TRAINING: 15-day training & grand challenge",
+      "TOURISM & ADVENTURE: B2B networking & destination showcase",
+      "YOUTH & DIGITAL EXPERIENCE: Gaming, 3D/VR, anime & digital fun",
+    ],
+    sectors: [
+      "Agriculture & Food Trade",
+      "Machinery & Technology",
+      "Culinary Training & Grand Challenge",
+      "Tourism & Adventure",
+      "Youth & Digital Experience (Gaming, 3D/VR)",
+    ],
+    status: "Published",
+    featuredOnHome: true,
+    updatedAt: new Date().toLocaleDateString(),
+  },
   {
     id: "1",
     slug: "bin-trade-showcase-2027",
@@ -347,9 +442,9 @@ export const INITIAL_ABOUT: AboutCMS = {
 export const INITIAL_CONTACT: ContactConfigCMS = {
   sectionTitle: "Contact Us",
   companyName: "Tobgyel Global Expos Pvt. Ltd.",
-  addressLine1: "Tobgyel Commercial Complex, Main Commercial Hub",
-  addressLine2: "Phuentsholing, Chhukha District",
-  cityCountry: "Kingdom of Bhutan",
+  addressLine1: "",
+  addressLine2: "",
+  cityCountry: "",
   phonePrimary: "+975 17933882",
   phoneSecondary: "+975 77933882",
   emailGeneral: "info@tobgyelglobalxpos.com",
@@ -401,7 +496,14 @@ export const getCMSEvents = (): TradeEventCMS[] => {
     localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
     return INITIAL_EVENTS;
   }
-  return JSON.parse(stored);
+  const parsed: TradeEventCMS[] = JSON.parse(stored);
+  const missingInitial = INITIAL_EVENTS.filter((ie) => !parsed.some((e) => e.id === ie.id || e.slug === ie.slug));
+  if (missingInitial.length > 0) {
+    const merged = [...missingInitial, ...parsed];
+    localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(merged));
+    return merged;
+  }
+  return parsed;
 };
 
 export const getCMSEventById = (id: string): TradeEventCMS | undefined => {
@@ -548,4 +650,59 @@ export const getCMSPartners = (): PartnersCMS => {
 
 export const saveCMSPartners = (config: PartnersCMS) => {
   localStorage.setItem(CMS_KEYS.PARTNERS, JSON.stringify(config));
+};
+
+export const getPageViewCount = (): number => {
+  if (typeof window === "undefined") return 1;
+  const stored = localStorage.getItem(CMS_KEYS.PAGE_VIEWS);
+  if (!stored || parseInt(stored, 10) > 100) {
+    const initialCount = 1;
+    localStorage.setItem(CMS_KEYS.PAGE_VIEWS, initialCount.toString());
+    return initialCount;
+  }
+  return parseInt(stored, 10);
+};
+
+export const incrementPageViewCount = (): number => {
+  if (typeof window === "undefined") return 1;
+  const current = getPageViewCount();
+  const updated = current + 1;
+  localStorage.setItem(CMS_KEYS.PAGE_VIEWS, updated.toString());
+  return updated;
+};
+
+export const getCMSProductAds = (): ProductAdCMS[] => {
+  if (typeof window === "undefined") return INITIAL_PRODUCT_ADS;
+  const stored = localStorage.getItem(CMS_KEYS.PRODUCT_ADS);
+  if (!stored) {
+    localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(INITIAL_PRODUCT_ADS));
+    return INITIAL_PRODUCT_ADS;
+  }
+  const parsed: ProductAdCMS[] = JSON.parse(stored);
+  const missingInitial = INITIAL_PRODUCT_ADS.filter((ia) => !parsed.some((a) => a.id === ia.id));
+  if (missingInitial.length > 0) {
+    const merged = [...parsed, ...missingInitial];
+    localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(merged));
+    return merged;
+  }
+  return parsed;
+};
+
+export const saveCMSProductAd = (ad: ProductAdCMS): ProductAdCMS => {
+  const ads = getCMSProductAds();
+  const index = ads.findIndex((a) => a.id === ad.id);
+  let updated: ProductAdCMS[];
+  if (index >= 0) {
+    updated = ads.map((a) => (a.id === ad.id ? ad : a));
+  } else {
+    updated = [{ ...ad, id: `ad-${Date.now()}` }, ...ads];
+  }
+  localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(updated));
+  return ad;
+};
+
+export const deleteCMSProductAd = (id: string) => {
+  const ads = getCMSProductAds();
+  const updated = ads.filter((a) => a.id !== id);
+  localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(updated));
 };

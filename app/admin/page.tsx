@@ -28,6 +28,7 @@ import {
   MapPin,
   Sparkles,
   Building,
+  ShoppingBag,
   ShieldCheck as ShieldIcon,
   PhoneCall,
   Info,
@@ -77,6 +78,11 @@ import {
   saveCMSContact,
   getCMSRegulations,
   saveCMSRegulations,
+  getCMSProductAds,
+  saveCMSProductAd,
+  deleteCMSProductAd,
+  getPageViewCount,
+  ProductAdCMS,
   TradeEventCMS,
   NewsArticleCMS,
   HeroConfigCMS,
@@ -101,7 +107,7 @@ export default function AdminPage() {
 
   // Navigation Module & Active Sub-Tab (All Website Pages CMS Modules)
   const [mainModule, setMainModule] = useState<
-    "dashboard" | "exhibitors" | "sponsors" | "visitors" | "events" | "news" | "hero" | "why-exhibit" | "participants" | "visit" | "partners" | "about" | "contact" | "regulations"
+    "dashboard" | "exhibitors" | "sponsors" | "visitors" | "events" | "news" | "product-ads" | "hero" | "why-exhibit" | "participants" | "visit" | "partners" | "about" | "contact" | "regulations"
   >("dashboard");
 
   // Submissions Data State
@@ -115,6 +121,8 @@ export default function AdminPage() {
   // CMS Content State
   const [cmsEvents, setCmsEvents] = useState<TradeEventCMS[]>([]);
   const [cmsNews, setCmsNews] = useState<NewsArticleCMS[]>([]);
+  const [productAds, setProductAds] = useState<ProductAdCMS[]>([]);
+  const [pageViews, setPageViews] = useState<number>(3840);
   const [heroConfig, setHeroConfig] = useState<HeroConfigCMS | null>(null);
   const [whyExhibitConfig, setWhyExhibitConfig] = useState<WhyExhibitCMS | null>(null);
   const [participantsConfig, setParticipantsConfig] = useState<ParticipantsCMS | null>(null);
@@ -127,8 +135,10 @@ export default function AdminPage() {
   // Edit Modals & Live Preview State
   const [editingEvent, setEditingEvent] = useState<Partial<TradeEventCMS> | null>(null);
   const [editingNews, setEditingNews] = useState<Partial<NewsArticleCMS> | null>(null);
+  const [editingAd, setEditingAd] = useState<Partial<ProductAdCMS> | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [showAdModal, setShowAdModal] = useState(false);
 
   // Modal View Toggle: "edit" vs "preview"
   const [eventModalTab, setEventModalTab] = useState<"edit" | "preview">("edit");
@@ -153,6 +163,8 @@ export default function AdminPage() {
     setVisitors(getVisitors());
     setCmsEvents(getCMSEvents());
     setCmsNews(getCMSNews());
+    setProductAds(getCMSProductAds());
+    setPageViews(getPageViewCount());
     setHeroConfig(getCMSHeroConfig());
     setWhyExhibitConfig(getCMSWhyExhibit());
     setParticipantsConfig(getCMSParticipants());
@@ -283,6 +295,35 @@ export default function AdminPage() {
   const handleDeleteNewsCMS = (id: string) => {
     if (confirm("Are you sure you want to delete this CMS news article?")) {
       deleteCMSNews(id);
+      refreshData();
+    }
+  };
+
+  // CMS Product Ads Actions
+  const handleSaveAd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAd || !editingAd.title) return;
+    const adToSave: ProductAdCMS = {
+      id: editingAd.id || `ad-${Date.now()}`,
+      title: editingAd.title || "",
+      companyName: editingAd.companyName || "Exhibitor Enterprise",
+      category: (editingAd.category as any) || "Food & Organic",
+      image: editingAd.image || "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80",
+      description: editingAd.description || "",
+      badgeTag: editingAd.badgeTag || "Featured Ad",
+      ctaText: editingAd.ctaText || "Inquire Product",
+      ctaUrl: editingAd.ctaUrl || "/register/exhibitor",
+      active: editingAd.active !== false,
+    };
+    saveCMSProductAd(adToSave);
+    setShowAdModal(false);
+    setEditingAd(null);
+    refreshData();
+  };
+
+  const handleDeleteAdCMS = (id: string) => {
+    if (confirm("Are you sure you want to delete this product ad?")) {
+      deleteCMSProductAd(id);
       refreshData();
     }
   };
@@ -671,6 +712,23 @@ export default function AdminPage() {
                       </span>
                     </button>
 
+                    {/* Products & Services Ads Manager */}
+                    <button
+                      onClick={() => selectModule("product-ads")}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "product-ads"
+                          ? "bg-slate-800 text-[#EAA500] font-bold"
+                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Products &amp; Ads</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px]">
+                        {productAds.length}
+                      </span>
+                    </button>
+
                     {/* 3. Hero Banner */}
                     <button
                       onClick={() => selectModule("hero")}
@@ -830,6 +888,7 @@ export default function AdminPage() {
                   {mainModule === "visitors" && "Visitor Pass Issuances"}
                   {mainModule === "events" && "Trade Fairs & Events Manager"}
                   {mainModule === "news" && "News & Press Bureau"}
+                  {mainModule === "product-ads" && "Products & Services Ads Manager"}
                   {mainModule === "hero" && "Landing Hero Configuration"}
                   {mainModule === "why-exhibit" && "Why Exhibit Page Content"}
                   {mainModule === "participants" && "International Participants Guide"}
@@ -906,6 +965,30 @@ export default function AdminPage() {
                     <span>Create Article</span>
                   </button>
                 )}
+
+                {mainModule === "product-ads" && (
+                  <button
+                    onClick={() => {
+                      setEditingAd({
+                        id: "",
+                        title: "",
+                        companyName: "",
+                        category: "Food & Organic",
+                        image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80",
+                        description: "",
+                        badgeTag: "Featured Ad",
+                        ctaText: "Inquire Product",
+                        ctaUrl: "/register/exhibitor",
+                        active: true,
+                      });
+                      setShowAdModal(true);
+                    }}
+                    className="px-4 py-2.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 min-h-[40px]"
+                  >
+                    <Plus className="w-4 h-4 text-[#EAA500]" />
+                    <span>Create Product Ad</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -946,11 +1029,13 @@ export default function AdminPage() {
 
                   <div className="bg-[#03142A] border border-slate-800 rounded-xl p-5 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-extrabold uppercase text-slate-400">Published Events</span>
-                      <Calendar className="w-5 h-5 text-[#EAA500]" />
+                      <span className="text-xs font-extrabold uppercase text-slate-400">Product Ads</span>
+                      <ShoppingBag className="w-5 h-5 text-[#EAA500]" />
                     </div>
-                    <div className="text-2xl font-black text-white">{cmsEvents.length}</div>
-                    <div className="text-[11px] text-slate-300">CMS Trade Expos</div>
+                    <div className="text-2xl font-black text-white">{productAds.length}</div>
+                    <div className="text-[11px] text-emerald-400 font-semibold">
+                      {productAds.filter(a => a.active).length} Active Ads
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1042,6 +1127,64 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => handleDeleteNewsCMS(news.id)}
+                            className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PRODUCTS & SERVICES ADS MODULE */}
+            {mainModule === "product-ads" && (
+              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {productAds.map((ad) => (
+                    <div key={ad.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-4 flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase ${ad.active !== false ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-red-500/20 text-red-300"}`}>
+                            {ad.active !== false ? "Active Ad" : "Inactive"}
+                          </span>
+                          <span className="text-[11px] text-[#EAA500] font-bold">{ad.category}</span>
+                        </div>
+
+                        <div className="h-32 rounded-lg bg-cover bg-center border border-slate-800" style={{ backgroundImage: `url('${ad.image}')` }} />
+
+                        <h3 className="text-sm font-bold text-white leading-snug">{ad.title}</h3>
+                        <p className="text-[11px] text-slate-300 font-semibold">{ad.companyName}</p>
+                        <p className="text-xs text-slate-400 line-clamp-2">{ad.description}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                        <button
+                          onClick={() => {
+                            const updated = { ...ad, active: !ad.active };
+                            saveCMSProductAd(updated);
+                            refreshData();
+                          }}
+                          className={`px-2.5 py-1 rounded text-[11px] font-bold uppercase transition-colors ${ad.active ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30" : "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"}`}
+                        >
+                          {ad.active ? "Deactivate" : "Activate"}
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingAd(ad);
+                              setShowAdModal(true);
+                            }}
+                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 min-h-[36px]"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAdCMS(ad.id)}
                             className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 min-h-[36px] min-w-[36px] flex items-center justify-center"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1896,6 +2039,156 @@ export default function AdminPage() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCT AD EDIT / CREATE MODAL */}
+      {showAdModal && editingAd && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-[#03142A] border border-slate-700/80 rounded-2xl max-w-2xl w-full p-4 sm:p-6 space-y-5 shadow-2xl text-left my-auto max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-[#0A4D8C] text-[#EAA500]">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-black text-white uppercase tracking-wider">
+                  {editingAd.id ? "Edit Product Advertisement" : "Create Product Advertisement"}
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAdModal(false);
+                  setEditingAd(null);
+                }}
+                className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAd} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-white uppercase mb-1">Product / Service Ad Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Organic Bhutanese Cordyceps & Herbal Tea Range"
+                  value={editingAd.title || ""}
+                  onChange={(e) => setEditingAd({ ...editingAd, title: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-white uppercase mb-1">Company / Exhibitor Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Himalayan Bio Products Bhutan"
+                    value={editingAd.companyName || ""}
+                    onChange={(e) => setEditingAd({ ...editingAd, companyName: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-white uppercase mb-1">Category</label>
+                  <select
+                    value={editingAd.category || "Food & Organic"}
+                    onChange={(e) => setEditingAd({ ...editingAd, category: e.target.value as any })}
+                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                  >
+                    <option value="Food & Organic">Food &amp; Organic</option>
+                    <option value="Machinery & Tech">Machinery &amp; Tech</option>
+                    <option value="Handicrafts & Luxury">Handicrafts &amp; Luxury</option>
+                    <option value="Services & Tourism">Services &amp; Tourism</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-white uppercase mb-1">Badge Tag</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Featured Exhibitor Ad"
+                    value={editingAd.badgeTag || ""}
+                    onChange={(e) => setEditingAd({ ...editingAd, badgeTag: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-white uppercase mb-1">Button CTA Text</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Inquire Booth Samples"
+                    value={editingAd.ctaText || ""}
+                    onChange={(e) => setEditingAd({ ...editingAd, ctaText: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-white uppercase mb-1">Image URL</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="https://..."
+                  value={editingAd.image || ""}
+                  onChange={(e) => setEditingAd({ ...editingAd, image: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-white uppercase mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Enter product description..."
+                  value={editingAd.description || ""}
+                  onChange={(e) => setEditingAd({ ...editingAd, description: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="adActiveCheck"
+                  checked={editingAd.active !== false}
+                  onChange={(e) => setEditingAd({ ...editingAd, active: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-[#EAA500] focus:ring-0"
+                />
+                <label htmlFor="adActiveCheck" className="text-xs font-bold text-white cursor-pointer">
+                  Activate Ad (Visible on Website Marketplace)
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdModal(false);
+                    setEditingAd(null);
+                  }}
+                  className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[40px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 min-h-[40px]"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Save Advertisement</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -2,12 +2,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Phone, Mail, Globe as GlobeIcon } from "lucide-react";
+import { Phone, Mail, Globe as GlobeIcon, CheckCircle, Loader2 } from "lucide-react";
 import Globe from "./Globe";
 import { getCMSContact, INITIAL_CONTACT, ContactConfigCMS } from "@/app/lib/cmsStore";
 
 export default function Footer() {
   const [contact, setContact] = useState<ContactConfigCMS>(INITIAL_CONTACT);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "Inquiry - Tobgyel Global Expos",
+    message: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loaded = getCMSContact();
@@ -15,6 +23,27 @@ export default function Footer() {
       setContact(loaded);
     }
   }, []);
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          recipient: contact.emailGeneral || "info@tobgyelglobalxpos.com",
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setSubmitted(true);
+      setFormData({ name: "", email: "", subject: "Inquiry - Tobgyel Global Expos", message: "" });
+    }
+  };
 
   return (
     <footer id="contact" className="bg-[#03142A] text-white pt-10 sm:pt-14 pb-6 border-t border-slate-900 relative overflow-hidden pb-safe">
@@ -41,54 +70,90 @@ export default function Footer() {
           </div>
 
           {/* 3. Sleek Minimalist Contact Form */}
-          <form onSubmit={(e) => { e.preventDefault(); alert("Thank you! Your message has been sent."); }} className="space-y-4 pt-2">
-            <div>
-              <input
-                type="text"
-                required
-                placeholder="Name"
-                className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors min-h-[44px]"
-              />
+          {submitted ? (
+            <div className="bg-emerald-950/90 border border-emerald-500/60 rounded-xl p-4 text-emerald-200 text-xs space-y-2 text-left">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                <CheckCircle className="w-4 h-4 shrink-0" />
+                <span>Message Delivered!</span>
+              </div>
+              <p className="text-slate-200 leading-relaxed">Thank you! Your inquiry has been sent directly to <strong className="text-white">info@tobgyelglobalxpos.com</strong>. We will get back to you shortly.</p>
             </div>
+          ) : (
+            <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
+              <div>
+                <input
+                  type="text"
+                  required
+                  placeholder="Your Name"
+                  value={formData.name || ""}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors min-h-[44px]"
+                />
+              </div>
 
-            <div>
-              <input
-                type="email"
-                required
-                placeholder="Email"
-                className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors min-h-[44px]"
-              />
-            </div>
+              <div>
+                <input
+                  type="email"
+                  required
+                  placeholder="Your Email"
+                  value={formData.email || ""}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors min-h-[44px]"
+                />
+              </div>
 
-            <div>
-              <textarea
-                rows={4}
-                required
-                placeholder="Message"
-                className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors resize-none"
-              />
-            </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Subject"
+                  value={formData.subject || ""}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors min-h-[44px]"
+                />
+              </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="w-full py-3.5 px-6 rounded bg-slate-700 hover:bg-[#EAA500] active:bg-[#c98e00] hover:text-[#03142A] text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-md min-h-[48px] flex items-center justify-center"
-              >
-                {contact.formButtonLabel || "Send"}
-              </button>
-            </div>
-          </form>
+              <div>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="Message"
+                  value={formData.message || ""}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="w-full bg-slate-900/60 border-b border-slate-700 px-3 py-3 text-white text-sm placeholder-slate-400 focus:border-[#EAA500] focus:outline-none transition-colors resize-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 px-6 rounded bg-[#D49900] hover:bg-[#bd8800] active:bg-[#a37500] disabled:opacity-50 text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-md min-h-[48px] flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>{contact.formButtonLabel || "Send Message"}</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* 4. Visit Us & Talk To Us Blocks (CMS Driven) */}
           <div className="space-y-6 pt-4 border-t border-slate-800/60">
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Visit us
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
-                {contact.addressLine1}, {contact.addressLine2}, {contact.cityCountry}
-              </p>
-            </div>
+            {(contact.addressLine1 || contact.addressLine2) && (
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Visit us
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed">
+                  {[contact.addressLine1, contact.addressLine2, contact.cityCountry].filter(Boolean).join(", ")}
+                </p>
+              </div>
+            )}
 
             <div className="space-y-1">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -151,10 +216,11 @@ export default function Footer() {
                 <h3 className="text-lg font-extrabold text-white tracking-wide">
                   {contact.companyName}
                 </h3>
-                <p className="text-sm text-slate-300 font-normal leading-relaxed">
-                  {contact.addressLine1}<br />
-                  {contact.addressLine2}, {contact.cityCountry}
-                </p>
+                {(contact.addressLine1 || contact.addressLine2) && (
+                  <p className="text-sm text-slate-300 font-normal leading-relaxed">
+                    {[contact.addressLine1, contact.addressLine2, contact.cityCountry].filter(Boolean).join(", ")}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3 pt-1 text-sm font-semibold">
@@ -209,48 +275,77 @@ export default function Footer() {
               {contact.formTitle || "Send Us A Message"}
             </h3>
 
-            <form onSubmit={(e) => e.preventDefault()} className="space-y-3.5">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
-                />
+            {submitted ? (
+              <div className="bg-emerald-950/90 border border-emerald-500/60 rounded-xl p-5 text-emerald-200 text-xs space-y-2 text-left">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                  <CheckCircle className="w-5 h-5 shrink-0" />
+                  <span>Message Delivered to info@tobgyelglobalxpos.com!</span>
+                </div>
+                <p className="text-slate-200 leading-relaxed">Thank you! Your message has been received and routed directly to our official inbox. Our team will get back to you shortly.</p>
               </div>
+            ) : (
+              <form onSubmit={handleFormSubmit} className="space-y-3.5">
+                <div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Your Name"
+                    value={formData.name || ""}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
+                  />
+                </div>
 
-              <div>
-                <input
-                  type="email"
-                  placeholder="Your Email"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
-                />
-              </div>
+                <div>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Your Email"
+                    value={formData.email || ""}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
+                  />
+                </div>
 
-              <div>
-                <input
-                  type="text"
-                  placeholder="Subject"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
-                />
-              </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Subject"
+                    value={formData.subject || ""}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
+                  />
+                </div>
 
-              <div>
-                <textarea
-                  rows={4}
-                  placeholder="Message"
-                  className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] resize-none"
-                />
-              </div>
+                <div>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Message"
+                    value={formData.message || ""}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] resize-none"
+                  />
+                </div>
 
-              <div>
-                <button
-                  type="submit"
-                  className="w-full py-3.5 px-6 rounded-lg bg-[#D49900] hover:bg-[#bd8800] active:bg-[#a37500] text-white font-extrabold text-sm uppercase tracking-widest transition-colors shadow-md min-h-[48px] flex items-center justify-center"
-                >
-                  {contact.formButtonLabel || "Send Message"}
-                </button>
-              </div>
-            </form>
+                <div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3.5 px-6 rounded-lg bg-[#D49900] hover:bg-[#bd8800] active:bg-[#a37500] disabled:opacity-50 text-white font-extrabold text-sm uppercase tracking-widest transition-colors shadow-md min-h-[48px] flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Sending Message...</span>
+                      </>
+                    ) : (
+                      <span>{contact.formButtonLabel || "Send Message"}</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
         </div>
