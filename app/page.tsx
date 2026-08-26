@@ -7,10 +7,6 @@ import Partners from "./components/Partners";
 import NewsUpdates from "./components/NewsUpdates";
 import Footer from "./components/Footer";
 
-export const metadata = {
-  title: "Tobgyel Global Expos | Bhutan's Gateway to International Trade & Events",
-  description: "Connecting global businesses, investors, innovators, and communities through world-class exhibitions and events in Bhutan.",
-};
 
 export default function Home() {
   return (
