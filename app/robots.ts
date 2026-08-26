@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin/", "/api/"],
     },
-    sitemap: "https://tobgyelglobalxpos.com/sitemap.xml",
+    sitemap: "https://www.tobgyelglobalxpos.com/sitemap.xml",
   };
 }

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tobgyelglobalxpos.com"),
+  metadataBase: new URL("https://www.tobgyelglobalxpos.com"),
   title: {
     default: "Tobgyel Global Expos | Bhutan's Gateway to International Trade & Events",
     template: "%s | Tobgyel Global Expos",
