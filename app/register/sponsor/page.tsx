@@ -19,9 +19,9 @@ export default function RegisterSponsorPage() {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addSponsor(formData);
+    await addSponsor(formData);
     setSubmitted(true);
   };
 

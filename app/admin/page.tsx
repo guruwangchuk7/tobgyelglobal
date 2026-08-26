@@ -42,8 +42,11 @@ import {
 
 import {
   getExhibitors,
+  fetchExhibitorsAsync,
   getSponsors,
+  fetchSponsorsAsync,
   getVisitors,
+  fetchVisitorsAsync,
   updateExhibitorStatus,
   deleteExhibitor,
   updateSponsorStatus,
@@ -57,9 +60,11 @@ import {
 
 import {
   getCMSEvents,
+  fetchCMSEventsAsync,
   saveCMSEvent,
   deleteCMSEvent,
   getCMSNews,
+  fetchCMSNewsAsync,
   saveCMSNews,
   deleteCMSNews,
   getCMSHeroConfig,
@@ -157,12 +162,22 @@ export default function AdminPage() {
     refreshData();
   }, []);
 
-  const refreshData = () => {
+  const refreshData = async () => {
     setExhibitors(getExhibitors());
     setSponsors(getSponsors());
     setVisitors(getVisitors());
-    setCmsEvents(getCMSEvents());
-    setCmsNews(getCMSNews());
+
+    const exh = await fetchExhibitorsAsync();
+    const sp = await fetchSponsorsAsync();
+    const vis = await fetchVisitorsAsync();
+    setExhibitors(exh);
+    setSponsors(sp);
+    setVisitors(vis);
+
+    const evts = await fetchCMSEventsAsync();
+    const news = await fetchCMSNewsAsync();
+    setCmsEvents(evts);
+    setCmsNews(news);
     setProductAds(getCMSProductAds());
     setPageViews(getPageViewCount());
     setHeroConfig(getCMSHeroConfig());

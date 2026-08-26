@@ -1,5 +1,7 @@
 "use client";
 
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
+
 // CMS Content Schemas (Full A - Z Coverage)
 
 export interface TradeEventCMS {
@@ -489,6 +491,35 @@ export const INITIAL_REGULATIONS: RegulationsCMS = {
 
 // CRUD Helper Functions for ALL Modules (A - Z)
 
+export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await supabase.from("cms_events").select("*").order("updated_at", { ascending: false });
+      if (!error && data && data.length > 0) {
+        return data.map((d: any) => ({
+          id: d.id,
+          slug: d.slug,
+          title: d.title,
+          category: d.category,
+          date: d.date,
+          location: d.location,
+          venue: d.venue,
+          image: d.image,
+          description: d.description || "",
+          highlights: Array.isArray(d.highlights) ? d.highlights : [],
+          sectors: Array.isArray(d.sectors) ? d.sectors : [],
+          status: d.status || "Published",
+          featuredOnHome: d.featured_on_home !== false,
+          updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching CMS events from Supabase:", err);
+    }
+  }
+  return getCMSEvents();
+};
+
 export const getCMSEvents = (): TradeEventCMS[] => {
   if (typeof window === "undefined") return INITIAL_EVENTS;
   const stored = localStorage.getItem(CMS_KEYS.EVENTS);
@@ -521,6 +552,29 @@ export const saveCMSEvent = (event: TradeEventCMS): TradeEventCMS => {
     updated = [{ ...event, id: `evt-${Date.now()}`, updatedAt: new Date().toLocaleDateString() }, ...events];
   }
   localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(updated));
+
+  if (isSupabaseConfigured()) {
+    const payload = {
+      id: event.id || `evt-${Date.now()}`,
+      slug: event.slug || event.id,
+      title: event.title,
+      category: event.category,
+      date: event.date,
+      location: event.location,
+      venue: event.venue,
+      image: event.image,
+      description: event.description,
+      highlights: event.highlights,
+      sectors: event.sectors,
+      status: event.status,
+      featured_on_home: event.featuredOnHome,
+      updated_at: new Date().toISOString(),
+    };
+    supabase.from("cms_events").upsert([payload]).then(({ error }) => {
+      if (error) console.error("Error saving CMS event to Supabase:", error);
+    });
+  }
+
   return event;
 };
 
@@ -528,6 +582,39 @@ export const deleteCMSEvent = (id: string) => {
   const events = getCMSEvents();
   const updated = events.filter((e) => e.id !== id);
   localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(updated));
+
+  if (isSupabaseConfigured()) {
+    supabase.from("cms_events").delete().eq("id", id).then(({ error }) => {
+      if (error) console.error("Error deleting CMS event from Supabase:", error);
+    });
+  }
+};
+
+export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await supabase.from("cms_news").select("*").order("updated_at", { ascending: false });
+      if (!error && data && data.length > 0) {
+        return data.map((d: any) => ({
+          id: d.id,
+          slug: d.slug,
+          title: d.title,
+          date: d.date,
+          category: d.category,
+          image: d.image,
+          excerpt: d.excerpt,
+          content: Array.isArray(d.content) ? d.content : [d.excerpt],
+          mediaContactEmail: d.media_contact_email || "info@tobgyelglobalxpos.com",
+          status: d.status || "Published",
+          featuredOnHome: d.featured_on_home !== false,
+          updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching CMS news from Supabase:", err);
+    }
+  }
+  return getCMSNews();
 };
 
 export const getCMSNews = (): NewsArticleCMS[] => {
@@ -555,6 +642,27 @@ export const saveCMSNews = (article: NewsArticleCMS): NewsArticleCMS => {
     updated = [{ ...article, id: `news-${Date.now()}`, updatedAt: new Date().toLocaleDateString() }, ...articles];
   }
   localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(updated));
+
+  if (isSupabaseConfigured()) {
+    const payload = {
+      id: article.id || `news-${Date.now()}`,
+      slug: article.slug || article.id,
+      title: article.title,
+      date: article.date,
+      category: article.category,
+      image: article.image,
+      excerpt: article.excerpt,
+      content: article.content,
+      media_contact_email: article.mediaContactEmail,
+      status: article.status,
+      featured_on_home: article.featuredOnHome,
+      updated_at: new Date().toISOString(),
+    };
+    supabase.from("cms_news").upsert([payload]).then(({ error }) => {
+      if (error) console.error("Error saving CMS news to Supabase:", error);
+    });
+  }
+
   return article;
 };
 
@@ -562,6 +670,12 @@ export const deleteCMSNews = (id: string) => {
   const articles = getCMSNews();
   const updated = articles.filter((n) => n.id !== id);
   localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(updated));
+
+  if (isSupabaseConfigured()) {
+    supabase.from("cms_news").delete().eq("id", id).then(({ error }) => {
+      if (error) console.error("Error deleting CMS news from Supabase:", error);
+    });
+  }
 };
 
 export const getCMSHeroConfig = (): HeroConfigCMS => {

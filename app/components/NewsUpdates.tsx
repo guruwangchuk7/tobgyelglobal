@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { getCMSNews, INITIAL_NEWS, NewsArticleCMS } from "@/app/lib/cmsStore";
+import { getCMSNews, fetchCMSNewsAsync, INITIAL_NEWS, NewsArticleCMS } from "@/app/lib/cmsStore";
 
 interface NewsUpdatesProps {
   from?: "home" | "news";
@@ -17,6 +17,11 @@ export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
     if (loaded && loaded.length > 0) {
       setNewsItems(loaded.filter((n) => n.status === "Published"));
     }
+    fetchCMSNewsAsync().then((fetched) => {
+      if (fetched && fetched.length > 0) {
+        setNewsItems(fetched.filter((n) => n.status === "Published"));
+      }
+    });
   }, []);
 
   return (

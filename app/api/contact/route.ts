@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { supabase, isSupabaseConfigured } from "@/app/lib/supabaseClient";
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +11,22 @@ export async function POST(request: Request) {
         { error: "Name, email, and message are required fields." },
         { status: 400 }
       );
+    }
+
+    const payload = {
+      name,
+      email,
+      subject: subject || "Website Inquiry",
+      message,
+      created_at: new Date().toISOString(),
+    };
+
+    // Save to Supabase DB if configured
+    if (isSupabaseConfigured()) {
+      const { error: dbError } = await supabase.from("contact_inquiries").insert([payload]);
+      if (dbError) {
+        console.error("[SUPABASE CONTACT ERROR]", dbError);
+      }
     }
 
     const recipient = "info@tobgyelglobalxpos.com";
@@ -41,7 +58,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: `Your inquiry has been successfully sent to ${recipient}`,
-      data: { name, email, recipient, timestamp: new Date().toISOString() },
+      data: payload,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -50,3 +67,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

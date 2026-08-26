@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
-import { getCMSEvents, INITIAL_EVENTS, TradeEventCMS } from "@/app/lib/cmsStore";
+import { getCMSEvents, fetchCMSEventsAsync, INITIAL_EVENTS, TradeEventCMS } from "@/app/lib/cmsStore";
 import { CompactCardCountdown } from "@/app/components/CountdownTimer";
 
 interface UpcomingEventsProps {
@@ -18,6 +18,11 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
     if (loaded && loaded.length > 0) {
       setEvents(loaded.filter((e) => e.status === "Published"));
     }
+    fetchCMSEventsAsync().then((fetched) => {
+      if (fetched && fetched.length > 0) {
+        setEvents(fetched.filter((e) => e.status === "Published"));
+      }
+    });
   }, []);
 
   return (
