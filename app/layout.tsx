@@ -20,10 +20,7 @@ export const metadata: Metadata = {
   },
   description: "Connecting global businesses, investors, innovators, and communities through world-class exhibitions and events in Bhutan.",
   verification: {
-    google: [
-      "QLeGh1kl2PRDF97EFo0fZPprznesEjHV7Cm88oAnG44",
-      "TirE6t0RVKEmMHM-xUkBXl031MGIZeYx_MsZxXJKkr4",
-    ],
+    google: "QLeGh1kl2PRDF97EFo0fZPprznesEjHV7Cm88oAnG44",
   },
 };
 
@@ -35,6 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="google-site-verification" content="QLeGh1kl2PRDF97EFo0fZPprznesEjHV7Cm88oAnG44" />
+        <meta name="google-site-verification" content="TirE6t0RVKEmMHM-xUkBXl031MGIZeYx_MsZxXJKkr4" />
+      </head>
       <body className="min-h-full flex flex-col">
         <ScrollToTop />
         {children}
