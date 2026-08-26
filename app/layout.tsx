@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   description: "Connecting global businesses, investors, innovators, and communities through world-class exhibitions and events in Bhutan.",
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "YOUR_GOOGLE_SITE_VERIFICATION_CODE",
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "TirE6t0RVKEmMHM-xUkBXl031MGIZeYx_MsZxXJKkr4",
   },
 };
 
