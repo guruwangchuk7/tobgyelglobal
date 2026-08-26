@@ -496,7 +496,7 @@ export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
     try {
       const { data, error } = await supabase.from("cms_events").select("*").order("updated_at", { ascending: false });
       if (!error && data && data.length > 0) {
-        return data.map((d: any) => ({
+        const fetched: TradeEventCMS[] = data.map((d: any) => ({
           id: d.id,
           slug: d.slug,
           title: d.title,
@@ -512,6 +512,12 @@ export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
           featuredOnHome: d.featured_on_home !== false,
           updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
         }));
+        const missingInitial = INITIAL_EVENTS.filter((ie) => !fetched.some((e) => e.id === ie.id || e.slug === ie.slug));
+        const merged = [...fetched, ...missingInitial];
+        if (typeof window !== "undefined") {
+          localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(merged));
+        }
+        return merged;
       }
     } catch (err) {
       console.error("Error fetching CMS events from Supabase:", err);
@@ -570,9 +576,12 @@ export const saveCMSEvent = (event: TradeEventCMS): TradeEventCMS => {
       featured_on_home: event.featuredOnHome,
       updated_at: new Date().toISOString(),
     };
-    supabase.from("cms_events").upsert([payload]).then(({ error }) => {
-      if (error) console.error("Error saving CMS event to Supabase:", error);
-    });
+    supabase
+      .from("cms_events")
+      .upsert([payload])
+      .then(({ error }) => {
+        if (error) console.error("Error upserting event to Supabase:", error);
+      });
   }
 
   return event;
@@ -595,7 +604,7 @@ export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
     try {
       const { data, error } = await supabase.from("cms_news").select("*").order("updated_at", { ascending: false });
       if (!error && data && data.length > 0) {
-        return data.map((d: any) => ({
+        const fetched: NewsArticleCMS[] = data.map((d: any) => ({
           id: d.id,
           slug: d.slug,
           title: d.title,
@@ -609,6 +618,12 @@ export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
           featuredOnHome: d.featured_on_home !== false,
           updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
         }));
+        const missingInitial = INITIAL_NEWS.filter((ie) => !fetched.some((n) => n.id === ie.id || n.slug === ie.slug));
+        const merged = [...fetched, ...missingInitial];
+        if (typeof window !== "undefined") {
+          localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(merged));
+        }
+        return merged;
       }
     } catch (err) {
       console.error("Error fetching CMS news from Supabase:", err);

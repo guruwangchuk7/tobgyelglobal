@@ -1,81 +1,60 @@
+"use client";
+
+import { use, useState, useEffect } from "react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import BackButton from "../../components/BackButton";
 import Link from "next/link";
 import { Calendar, UserCheck, Ticket } from "lucide-react";
-import { notFound } from "next/navigation";
+import { getCMSNewsById, fetchCMSNewsAsync, NewsArticleCMS, INITIAL_NEWS } from "@/app/lib/cmsStore";
 
-export const metadata = {
-  title: "News Article | Tobgyel Global Expos",
-  description: "Official press release and news update from Tobgyel Global Expos in Bhutan.",
-};
-
-const newsDatabase = [
-  {
-    id: "1",
-    title: "BIN Trade Showcase 2027 Registration Now Open",
-    date: "May 15, 2024",
-    category: "Press Release | Trade & Commerce",
-    image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Official registration for the BIN Trade Showcase 2027 is officially open to domestic and international exhibitors.",
-    content: [
-      "Official registration for the BIN Trade Showcase 2027 is officially open to domestic and international exhibitors. The landmark trade fair will take place in Phuentsholing, Bhutan, bringing together over 300 participating enterprises across construction, green energy, technology, tourism, and organic agriculture.",
-      "Exhibitors registering during the early-bird phase receive prime booth allocations inside the main pavilion, complimentary inclusion in the official exhibition catalog, and full access to our B2B matchmaking portal.",
-      "The event is organized under the patronage of the Royal Government of Bhutan and supported by the Ministry of Industry, Commerce & Employment (MoICE). Delegates from India, Bangladesh, Nepal, Thailand, and East Asia are expected to participate.",
-    ],
-  },
-  {
-    id: "2",
-    title: "New International Partnerships Announced",
-    date: "May 10, 2024",
-    category: "Global Alliances | Economic Growth",
-    image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Tobgyel Global Expos formalizes strategic alliances with regional chambers of commerce and international trade federations.",
-    content: [
-      "Tobgyel Global Expos has formalized strategic partnerships with regional commerce chambers, including the Bhutan Chamber of Commerce & Industry (BCCI) and South Asian trade federations.",
-      "These bilateral agreements facilitate expedited visa processing for foreign delegates, tax exemption assistance for exhibition display samples, and dedicated transport logistics via Drukair and Bhutan Airlines.",
-      "By establishing direct connections between international investors and domestic Bhutanese entrepreneurs, Tobgyel Global Expos continues to position Bhutan as a sustainable trade nexus in South Asia.",
-    ],
-  },
-  {
-    id: "3",
-    title: "Bhutan: The Next Hub for Business & Investment",
-    date: "May 5, 2024",
-    category: "Market Insights | Investment",
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Strategic trade infrastructure and eco-conscious policies position Bhutan as a prime destination for sustainable investments.",
-    content: [
-      "Positioned strategically at the crossroads of South and East Asia, Bhutan is rapidly expanding its sustainable trade infrastructure.",
-      "With the visionary development of the Gelephu Mindful City Special Administrative Region (SAR) and the Phuentsholing dry port expansion, international investors have unprecedented access to renewable energy projects, organic agribusiness, eco-tourism, and digital technology ventures.",
-      "Tobgyel Global Expos provides the ideal platform for foreign companies to gain first-mover advantage in Bhutan's high-growth green economy.",
-    ],
-  },
-];
-
-export function generateStaticParams() {
-  return newsDatabase.map((item) => ({
-    id: item.id,
-  }));
-}
-
-export default async function NewsDetailPage({
+export default function NewsDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ from?: string }>;
 }) {
-  const { id } = await params;
-  const { from } = await searchParams;
-  const article = newsDatabase.find((n) => n.id === id);
+  const { id } = use(params);
+  const { from } = use(searchParams);
+
+  // Initialize with server-safe initial seed data to prevent hydration mismatch
+  const [article, setArticle] = useState<NewsArticleCMS | undefined>(
+    () => INITIAL_NEWS.find((n) => n.id === id || n.slug === id)
+  );
+
+  useEffect(() => {
+    // Load local storage or DB data safely after mount
+    const local = getCMSNewsById(id);
+    if (local) {
+      setArticle(local);
+    }
+    fetchCMSNewsAsync().then((newsList) => {
+      const found = newsList.find((n) => n.id === id || n.slug === id);
+      if (found) setArticle(found);
+    });
+  }, [id]);
 
   if (!article) {
-    notFound();
+    return (
+      <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans">
+        <Header />
+        <main className="flex-1 py-16 text-center space-y-4">
+          <h1 className="text-2xl font-bold">News Article Not Found</h1>
+          <Link href="/news" className="text-[#0A4D8C] font-semibold underline">
+            Return to News Page
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   const isFromHome = from === "home";
   const backHref = isFromHome ? "/#news" : "/news";
   const backText = isFromHome ? "Back to Home" : "Back to All News";
+
+  const paragraphs = Array.isArray(article.content) ? article.content : [article.content || article.excerpt];
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans">
@@ -104,7 +83,7 @@ export default async function NewsDetailPage({
               <span>Published: {article.date}</span>
             </div>
             <span>•</span>
-            <span>Official Press Release</span>
+            <span>{article.category || "Official Press Release"}</span>
           </div>
         </div>
       </section>
@@ -114,12 +93,14 @@ export default async function NewsDetailPage({
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           <div className="bg-white p-6 sm:p-10 rounded-2xl border border-slate-200 shadow-md space-y-6 text-left">
-            <p className="text-base sm:text-lg font-bold text-[#03142A] leading-relaxed border-l-4 border-[#EAA500] pl-4">
-              {article.excerpt}
-            </p>
+            {article.excerpt && (
+              <p className="text-base sm:text-lg font-bold text-[#03142A] leading-relaxed border-l-4 border-[#EAA500] pl-4">
+                {article.excerpt}
+              </p>
+            )}
 
             <div className="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
-              {article.content.map((paragraph, index) => (
+              {paragraphs.map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>
               ))}
             </div>
@@ -127,7 +108,16 @@ export default async function NewsDetailPage({
             <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 space-y-1">
               <p className="font-bold text-slate-900">Media &amp; Press Contact</p>
               <p>Tobgyel Global Expos Press Bureau • Phuentsholing, Bhutan</p>
-              <p>Email: <a href="mailto:info@tobgyelglobalxpos.com" className="text-[#0A4D8C] font-semibold underline">info@tobgyelglobalxpos.com</a></p>
+              <p>
+                Email:{" "}
+                <a
+                  href={`mailto:${article.mediaContactEmail || "info@tobgyelglobalxpos.com"}`}
+                  className="text-[#0A4D8C] font-semibold underline"
+                  suppressHydrationWarning
+                >
+                  {article.mediaContactEmail || "info@tobgyelglobalxpos.com"}
+                </a>
+              </p>
             </div>
           </div>
 

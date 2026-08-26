@@ -37,7 +37,14 @@ import {
   Landmark,
   Plane,
   Menu,
-  X
+  X,
+  ArrowLeft,
+  Check,
+  Tag,
+  Share2,
+  Monitor,
+  Tablet,
+  Smartphone
 } from "lucide-react";
 
 import {
@@ -98,7 +105,20 @@ import {
   AboutCMS,
   ContactConfigCMS,
   RegulationsCMS,
+  INITIAL_EVENTS,
+  INITIAL_NEWS,
+  INITIAL_HERO,
+  INITIAL_ABOUT,
+  INITIAL_CONTACT
 } from "@/app/lib/cmsStore";
+
+import AdminLivePreview from "./components/AdminLivePreview";
+import Hero from "../components/Hero";
+import Footer from "../components/Footer";
+import Partners from "../components/Partners";
+import ProductsAds from "../components/ProductsAds";
+import InfoHub from "../components/InfoHub";
+import { CompactCardCountdown } from "../components/CountdownTimer";
 
 export default function AdminPage() {
   // Login State
@@ -110,7 +130,7 @@ export default function AdminPage() {
   // Mobile Navigation Drawer State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Navigation Module & Active Sub-Tab (All Website Pages CMS Modules)
+  // Navigation Module
   const [mainModule, setMainModule] = useState<
     "dashboard" | "exhibitors" | "sponsors" | "visitors" | "events" | "news" | "product-ads" | "hero" | "why-exhibit" | "participants" | "visit" | "partners" | "about" | "contact" | "regulations"
   >("dashboard");
@@ -137,17 +157,17 @@ export default function AdminPage() {
   const [contactConfig, setContactConfig] = useState<ContactConfigCMS | null>(null);
   const [regulationsConfig, setRegulationsConfig] = useState<RegulationsCMS | null>(null);
 
-  // Edit Modals & Live Preview State
+  // Split Workspace & Live Editor Active Item State
   const [editingEvent, setEditingEvent] = useState<Partial<TradeEventCMS> | null>(null);
   const [editingNews, setEditingNews] = useState<Partial<NewsArticleCMS> | null>(null);
   const [editingAd, setEditingAd] = useState<Partial<ProductAdCMS> | null>(null);
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [showNewsModal, setShowNewsModal] = useState(false);
-  const [showAdModal, setShowAdModal] = useState(false);
 
-  // Modal View Toggle: "edit" vs "preview"
-  const [eventModalTab, setEventModalTab] = useState<"edit" | "preview">("edit");
-  const [newsModalTab, setNewsModalTab] = useState<"edit" | "preview">("edit");
+  // Editor Tabs ("details" | "seo" | "settings")
+  const [editorTab, setEditorTab] = useState<"details" | "seo" | "settings">("details");
+
+  // Unsaved changes indicator state
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
 
   // Sidebar Submenu Expansion
   const [contentOpen, setContentOpen] = useState(true);
@@ -207,10 +227,14 @@ export default function AdminPage() {
     localStorage.removeItem("tobgyel_admin_session");
   };
 
-  // Switch Module & Auto-Close Mobile Menu
   const selectModule = (module: typeof mainModule) => {
     setMainModule(module);
     setIsMobileMenuOpen(false);
+    setEditingEvent(null);
+    setEditingNews(null);
+    setEditingAd(null);
+    setIsDirty(false);
+    setSaveSuccessMsg("");
   };
 
   // Submissions Actions
@@ -251,9 +275,11 @@ export default function AdminPage() {
   };
 
   // CMS Events Actions
-  const handleSaveEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEvent?.title || !editingEvent?.date) return;
+  const handleSaveEvent = (publishStatus: "Published" | "Draft" = "Published") => {
+    if (!editingEvent?.title || !editingEvent?.date) {
+      alert("Please fill in Title and Date fields.");
+      return;
+    }
     const itemToSave: TradeEventCMS = {
       id: editingEvent.id || `evt-${Date.now()}`,
       slug: editingEvent.slug || editingEvent.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -264,29 +290,33 @@ export default function AdminPage() {
       venue: editingEvent.venue || "Phuentsholing International Expo Pavilion",
       image: editingEvent.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
       description: editingEvent.description || "",
-      highlights: editingEvent.highlights || [],
-      sectors: editingEvent.sectors || [],
-      status: editingEvent.status || "Published",
+      highlights: editingEvent.highlights || ["Over 300 international exhibition booths"],
+      sectors: editingEvent.sectors || ["Construction", "Tourism"],
+      status: publishStatus,
       featuredOnHome: editingEvent.featuredOnHome !== false,
       updatedAt: new Date().toLocaleDateString(),
     };
     saveCMSEvent(itemToSave);
-    setShowEventModal(false);
-    setEditingEvent(null);
+    setIsDirty(false);
+    setSaveSuccessMsg(`Event ${publishStatus === "Published" ? "Published Live!" : "Saved as Draft"}`);
+    setTimeout(() => setSaveSuccessMsg(""), 3000);
     refreshData();
   };
 
   const handleDeleteEventCMS = (id: string) => {
     if (confirm("Are you sure you want to delete this CMS event listing?")) {
       deleteCMSEvent(id);
+      if (editingEvent?.id === id) setEditingEvent(null);
       refreshData();
     }
   };
 
   // CMS News Actions
-  const handleSaveNews = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingNews?.title || !editingNews?.date) return;
+  const handleSaveNews = (publishStatus: "Published" | "Draft" = "Published") => {
+    if (!editingNews?.title || !editingNews?.date) {
+      alert("Please fill in Title and Date fields.");
+      return;
+    }
     const itemToSave: NewsArticleCMS = {
       id: editingNews.id || `news-${Date.now()}`,
       slug: editingNews.slug || editingNews.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -297,27 +327,31 @@ export default function AdminPage() {
       excerpt: editingNews.excerpt || "",
       content: editingNews.content || [editingNews.excerpt || ""],
       mediaContactEmail: editingNews.mediaContactEmail || "info@tobgyelglobalxpos.com",
-      status: editingNews.status || "Published",
+      status: publishStatus,
       featuredOnHome: editingNews.featuredOnHome !== false,
       updatedAt: new Date().toLocaleDateString(),
     };
     saveCMSNews(itemToSave);
-    setShowNewsModal(false);
-    setEditingNews(null);
+    setIsDirty(false);
+    setSaveSuccessMsg(`Article ${publishStatus === "Published" ? "Published Live!" : "Saved as Draft"}`);
+    setTimeout(() => setSaveSuccessMsg(""), 3000);
     refreshData();
   };
 
   const handleDeleteNewsCMS = (id: string) => {
     if (confirm("Are you sure you want to delete this CMS news article?")) {
       deleteCMSNews(id);
+      if (editingNews?.id === id) setEditingNews(null);
       refreshData();
     }
   };
 
   // CMS Product Ads Actions
-  const handleSaveAd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingAd || !editingAd.title) return;
+  const handleSaveAd = () => {
+    if (!editingAd || !editingAd.title) {
+      alert("Please enter product ad title.");
+      return;
+    }
     const adToSave: ProductAdCMS = {
       id: editingAd.id || `ad-${Date.now()}`,
       title: editingAd.title || "",
@@ -331,87 +365,97 @@ export default function AdminPage() {
       active: editingAd.active !== false,
     };
     saveCMSProductAd(adToSave);
-    setShowAdModal(false);
-    setEditingAd(null);
+    setIsDirty(false);
+    setSaveSuccessMsg("Product Ad Saved!");
+    setTimeout(() => setSaveSuccessMsg(""), 3000);
     refreshData();
   };
 
   const handleDeleteAdCMS = (id: string) => {
     if (confirm("Are you sure you want to delete this product ad?")) {
       deleteCMSProductAd(id);
+      if (editingAd?.id === id) setEditingAd(null);
       refreshData();
     }
   };
 
   // Page CMS Actions
-  const handleSaveHero = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveHero = () => {
     if (heroConfig) {
       saveCMSHeroConfig(heroConfig);
-      alert("Landing Page Hero Configuration saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Hero Banner Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSaveWhyExhibit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveWhyExhibit = () => {
     if (whyExhibitConfig) {
       saveCMSWhyExhibit(whyExhibitConfig);
-      alert("Why Exhibit Content saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Why Exhibit Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSaveParticipants = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveParticipants = () => {
     if (participantsConfig) {
       saveCMSParticipants(participantsConfig);
-      alert("International Participants Content saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Participants Guide Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSaveVisit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveVisit = () => {
     if (visitConfig) {
       saveCMSVisit(visitConfig);
-      alert("Plan Your Visit Content saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Plan Your Visit Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSavePartners = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSavePartners = () => {
     if (partnersConfig) {
       saveCMSPartners(partnersConfig);
-      alert("Partners & Sponsors Content saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Partners Config Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSaveAbout = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveAbout = () => {
     if (aboutConfig) {
       saveCMSAbout(aboutConfig);
-      alert("About Section & Company Vision saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("About Vision Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSaveContact = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveContact = () => {
     if (contactConfig) {
       saveCMSContact(contactConfig);
-      alert("Contact Details & Footer Configuration saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Contact & Footer Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
 
-  const handleSaveRegulations = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveRegulations = () => {
     if (regulationsConfig) {
       saveCMSRegulations(regulationsConfig);
-      alert("Exhibitor Regulations & Guidelines saved successfully!");
+      setIsDirty(false);
+      setSaveSuccessMsg("Regulations Saved!");
+      setTimeout(() => setSaveSuccessMsg(""), 3000);
       refreshData();
     }
   };
@@ -445,7 +489,38 @@ export default function AdminPage() {
     document.body.removeChild(link);
   };
 
-  // Metrics
+  // Filtered Submissions
+  const filteredExhibitors = exhibitors.filter((e) => {
+    const matchesSearch = e.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || e.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()) || e.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || e.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredSponsors = sponsors.filter((s) => {
+    const matchesSearch = s.organizationName.toLowerCase().includes(searchQuery.toLowerCase()) || s.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()) || s.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || s.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredVisitors = visitors.filter((v) => {
+    const matchesSearch = v.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || v.email.toLowerCase().includes(searchQuery.toLowerCase()) || v.passCode.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Filtered CMS Items
+  const filteredEvents = cmsEvents.filter((evt) => {
+    const matchesSearch = evt.title.toLowerCase().includes(searchQuery.toLowerCase()) || evt.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || evt.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredNews = cmsNews.filter((news) => {
+    const matchesSearch = news.title.toLowerCase().includes(searchQuery.toLowerCase()) || news.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || news.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   const totalPending =
     exhibitors.filter(e => e.status === "Pending").length +
     sponsors.filter(s => s.status === "Pending").length +
@@ -467,7 +542,7 @@ export default function AdminPage() {
                 Tobgyel CMS Admin Portal
               </h1>
               <p className="text-xs text-slate-300">
-                Manage Content, Events, News &amp; Submissions
+                Visual Content Management &amp; Live Website Editor
               </p>
             </div>
 
@@ -515,7 +590,7 @@ export default function AdminPage() {
                 className="w-full py-3 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 min-h-[48px]"
               >
                 <Lock className="w-4 h-4" />
-                <span>Sign In to CMS Dashboard</span>
+                <span>Sign In to Visual CMS</span>
               </button>
             </form>
 
@@ -527,28 +602,26 @@ export default function AdminPage() {
           </div>
         </main>
       ) : (
-        /* PROTECTED SIDEBAR + WORKSPACE LAYOUT */
+        /* PROTECTED SIDEBAR + SPLIT WORKSPACE LAYOUT */
         <div className="flex-1 flex flex-col md:flex-row min-h-screen relative">
 
-          {/* MOBILE RESPONSIVE TOP BAR (< 768px) */}
+          {/* MOBILE TOP BAR (< 768px) */}
           <div className="md:hidden bg-[#03142A] border-b border-slate-800 p-3.5 flex items-center justify-between sticky top-0 z-40">
-            {/* Left Side: Hamburger Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg bg-slate-900 border border-slate-700 text-white hover:text-[#EAA500] focus:outline-none min-h-[42px] min-w-[42px] flex items-center justify-center shrink-0"
+              className="p-2 rounded-lg bg-slate-900 border border-slate-700 text-white hover:text-[#EAA500] min-h-[42px] min-w-[42px] flex items-center justify-center shrink-0"
               aria-label="Toggle Navigation Menu"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            {/* Right Side: Tobgyel CMS Logo & Active Module Title */}
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 rounded-lg bg-[#0A4D8C] text-[#EAA500] shrink-0">
                 <LayoutDashboard className="w-4 h-4" />
               </div>
               <div className="text-right">
                 <h2 className="text-xs font-black uppercase text-white tracking-wider leading-tight">
-                  Tobgyel CMS
+                  Tobgyel Visual CMS
                 </h2>
                 <p className="text-[10px] text-slate-400 font-medium capitalize leading-tight">
                   {mainModule.replace("-", " ")}
@@ -557,7 +630,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* MOBILE RESPONSIVE BACKDROP OVERLAY */}
+          {/* MOBILE BACKDROP OVERLAY */}
           {isMobileMenuOpen && (
             <div
               onClick={() => setIsMobileMenuOpen(false)}
@@ -565,15 +638,14 @@ export default function AdminPage() {
             />
           )}
 
-          {/* SIDEBAR NAVIGATION (Desktop permanent left sidebar w-64 / Mobile slide-in drawer from left) */}
+          {/* SIDEBAR NAVIGATION */}
           <aside
-            className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#03142A] border-r border-slate-800/80 flex flex-col justify-between shrink-0 p-5 space-y-6 overflow-y-auto transition-transform duration-300 ease-in-out ${
-              isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
-            }`}
+            className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#03142A] border-r border-slate-800 flex flex-col justify-between shrink-0 p-5 space-y-6 overflow-y-auto transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
+              }`}
           >
             <div className="space-y-6">
 
-              {/* Brand Header & Mobile Close */}
+              {/* Brand Header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-[#0A4D8C] text-[#EAA500]">
@@ -583,20 +655,19 @@ export default function AdminPage() {
                     <h2 className="text-sm font-black uppercase text-white tracking-wider">
                       Tobgyel CMS
                     </h2>
-                    <p className="text-[11px] text-slate-400 font-medium">Control Center</p>
+                    <p className="text-[11px] text-slate-400 font-medium">Visual Editor</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="md:hidden p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white"
-                  aria-label="Close Navigation Drawer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Sidebar Menu Section 1: Dashboard Overview */}
+              {/* Menu Section 1: Dashboard */}
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-1">Overview</p>
                 <button
@@ -618,7 +689,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              {/* Sidebar Menu Section 2: Submissions Collapsible Group */}
+              {/* Menu Section 2: Submissions Group */}
               <div className="space-y-1">
                 <button
                   onClick={() => setSubmissionsOpen(!submissionsOpen)}
@@ -681,7 +752,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* Sidebar Menu Section 3: Exact Content CMS Order */}
+              {/* Menu Section 3: Live CMS Modules */}
               <div className="space-y-1">
                 <button
                   onClick={() => setContentOpen(!contentOpen)}
@@ -693,7 +764,6 @@ export default function AdminPage() {
 
                 {contentOpen && (
                   <div className="space-y-1 pl-2">
-                    {/* 1. Trade Events (with count badge) */}
                     <button
                       onClick={() => selectModule("events")}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "events"
@@ -710,7 +780,6 @@ export default function AdminPage() {
                       </span>
                     </button>
 
-                    {/* 2. News & Press Bureau (with count badge) */}
                     <button
                       onClick={() => selectModule("news")}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "news"
@@ -727,7 +796,6 @@ export default function AdminPage() {
                       </span>
                     </button>
 
-                    {/* Products & Services Ads Manager */}
                     <button
                       onClick={() => selectModule("product-ads")}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "product-ads"
@@ -744,7 +812,6 @@ export default function AdminPage() {
                       </span>
                     </button>
 
-                    {/* 3. Hero Banner */}
                     <button
                       onClick={() => selectModule("hero")}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "hero"
@@ -758,7 +825,6 @@ export default function AdminPage() {
                       </div>
                     </button>
 
-                    {/* 4. About & Vision */}
                     <button
                       onClick={() => selectModule("about")}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "about"
@@ -772,7 +838,6 @@ export default function AdminPage() {
                       </div>
                     </button>
 
-                    {/* 5. Contact & Footer */}
                     <button
                       onClick={() => selectModule("contact")}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "contact"
@@ -783,59 +848,6 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <PhoneCall className="w-3.5 h-3.5" />
                         <span>Contact &amp; Footer</span>
-                      </div>
-                    </button>
-
-                    {/* Additional CMS Modules */}
-                    <button
-                      onClick={() => selectModule("why-exhibit")}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "why-exhibit"
-                          ? "bg-slate-800 text-[#EAA500] font-bold"
-                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Handshake className="w-3.5 h-3.5" />
-                        <span>Why Exhibit Page</span>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => selectModule("participants")}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "participants"
-                          ? "bg-slate-800 text-[#EAA500] font-bold"
-                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Globe className="w-3.5 h-3.5" />
-                        <span>Participants Guide</span>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => selectModule("regulations")}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "regulations"
-                          ? "bg-slate-800 text-[#EAA500] font-bold"
-                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Landmark className="w-3.5 h-3.5" />
-                        <span>Gov Regulations</span>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => selectModule("visit")}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "visit"
-                          ? "bg-slate-800 text-[#EAA500] font-bold"
-                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Plane className="w-3.5 h-3.5" />
-                        <span>Plan Your Visit</span>
                       </div>
                     </button>
 
@@ -866,17 +878,17 @@ export default function AdminPage() {
               >
                 <div className="flex items-center gap-2">
                   <ExternalLink className="w-3.5 h-3.5 text-[#EAA500]" />
-                  <span>Open in browser</span>
+                  <span>Open Public Website</span>
                 </div>
               </Link>
 
               <div className="flex items-center justify-between px-3 py-1.5 text-xs text-slate-400">
                 <span className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Status</span>
+                  <span>Supabase DB</span>
                 </span>
                 <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                  Online
+                  Connected
                 </span>
               </div>
 
@@ -890,31 +902,44 @@ export default function AdminPage() {
             </div>
           </aside>
 
-          {/* MAIN RIGHT WORKSPACE AREA */}
-          <main className="flex-1 bg-[#020D1B] p-4 sm:p-8 space-y-6 overflow-y-auto w-full max-w-full">
+          {/* MAIN WORKSPACE AREA */}
+          <main className="flex-1 bg-[#020D1B] p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto w-full max-w-full">
 
-            {/* Top Workspace Bar */}
+            {/* Top Workspace Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800 text-left">
               <div>
-                <h1 className="text-lg sm:text-2xl font-black uppercase text-white tracking-wide">
-                  {mainModule === "dashboard" && "Dashboard Overview"}
-                  {mainModule === "exhibitors" && "Exhibitor Registrations"}
-                  {mainModule === "sponsors" && "Sponsorship Packages"}
-                  {mainModule === "visitors" && "Visitor Pass Issuances"}
-                  {mainModule === "events" && "Trade Fairs & Events Manager"}
-                  {mainModule === "news" && "News & Press Bureau"}
-                  {mainModule === "product-ads" && "Products & Services Ads Manager"}
-                  {mainModule === "hero" && "Landing Hero Configuration"}
-                  {mainModule === "why-exhibit" && "Why Exhibit Page Content"}
-                  {mainModule === "participants" && "International Participants Guide"}
-                  {mainModule === "visit" && "Plan Your Visit Page"}
-                  {mainModule === "partners" && "Partners & Sponsors"}
-                  {mainModule === "about" && "About & Vision"}
-                  {mainModule === "contact" && "Contact Info & Footer"}
-                  {mainModule === "regulations" && "Government Regulations"}
+                <h1 className="text-lg sm:text-2xl font-black uppercase text-white tracking-wide flex items-center gap-2">
+                  <span>
+                    {mainModule === "dashboard" && "Dashboard Overview"}
+                    {mainModule === "exhibitors" && "Exhibitor Registrations"}
+                    {mainModule === "sponsors" && "Sponsorship Applications"}
+                    {mainModule === "visitors" && "Visitor Pass Issuances"}
+                    {mainModule === "events" && (editingEvent ? "Editing Trade Event" : "Trade Fairs & Events Manager")}
+                    {mainModule === "news" && (editingNews ? "Editing Press Release" : "News & Press Bureau")}
+                    {mainModule === "product-ads" && (editingAd ? "Editing Product Showcase Ad" : "Products & Services Ads Manager")}
+                    {mainModule === "hero" && "Landing Hero Configuration"}
+                    {mainModule === "why-exhibit" && "Why Exhibit Content"}
+                    {mainModule === "participants" && "International Participants Guide"}
+                    {mainModule === "visit" && "Plan Your Visit Configuration"}
+                    {mainModule === "partners" && "Partners & Sponsors"}
+                    {mainModule === "about" && "About & Vision"}
+                    {mainModule === "contact" && "Contact Info & Footer"}
+                    {mainModule === "regulations" && "Government Regulations"}
+                  </span>
+                  {isDirty && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/40 animate-pulse">
+                      ● Unsaved Changes
+                    </span>
+                  )}
+                  {saveSuccessMsg && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold border border-emerald-500/40 flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      {saveSuccessMsg}
+                    </span>
+                  )}
                 </h1>
                 <p className="text-xs text-slate-400 pt-0.5">
-                  Manage records, edit fields, and publish updates to Tobgyel Global Expos
+                  Visual Live Preview Editor &bull; Real-time rendering on keypress
                 </p>
               </div>
 
@@ -929,25 +954,25 @@ export default function AdminPage() {
                   </button>
                 )}
 
-                {mainModule === "events" && (
+                {mainModule === "events" && !editingEvent && (
                   <button
                     onClick={() => {
                       setEditingEvent({
-                        id: "",
-                        title: "",
+                        id: `evt-${Date.now()}`,
+                        slug: "new-trade-expo",
+                        title: "New International Trade Expo 2027",
                         category: "Trade & Commerce",
-                        date: "",
+                        date: "May 20 – 23, 2027",
                         location: "Phuentsholing, Bhutan",
                         venue: "Phuentsholing International Expo Pavilion",
                         image: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
-                        description: "",
-                        highlights: ["Over 300 international exhibition booths"],
-                        sectors: ["Construction", "Tourism"],
-                        status: "Published",
+                        description: "Premier international trade exhibition connecting enterprises across Bhutan and South Asia.",
+                        highlights: ["Over 300 international exhibition booths", "B2B Matchmaking lounges"],
+                        sectors: ["Building & Construction", "Tourism"],
+                        status: "Draft",
                         featuredOnHome: true,
                       });
-                      setEventModalTab("edit");
-                      setShowEventModal(true);
+                      setIsDirty(true);
                     }}
                     className="px-4 py-2.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 min-h-[40px]"
                   >
@@ -956,23 +981,26 @@ export default function AdminPage() {
                   </button>
                 )}
 
-                {mainModule === "news" && (
+                {mainModule === "news" && !editingNews && (
                   <button
                     onClick={() => {
                       setEditingNews({
-                        id: "",
-                        title: "",
+                        id: `news-${Date.now()}`,
+                        slug: "new-press-announcement",
+                        title: "Official Announcement: Global Trade Delegations Confirmed",
                         category: "Press Release | Trade & Commerce",
                         date: new Date().toLocaleDateString(),
                         image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80",
-                        excerpt: "",
-                        content: [""],
+                        excerpt: "Delegates from international chambers of commerce confirm participation for upcoming expos in Bhutan.",
+                        content: [
+                          "Tobgyel Global Expos is pleased to announce confirmed participation from regional trade delegations across South Asia.",
+                          "Foreign delegates will benefit from expedited visa clearance, dry-port customs assistance, and curated B2B matchmaking lounges."
+                        ],
                         mediaContactEmail: "info@tobgyelglobalxpos.com",
-                        status: "Published",
+                        status: "Draft",
                         featuredOnHome: true,
                       });
-                      setNewsModalTab("edit");
-                      setShowNewsModal(true);
+                      setIsDirty(true);
                     }}
                     className="px-4 py-2.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 min-h-[40px]"
                   >
@@ -981,22 +1009,22 @@ export default function AdminPage() {
                   </button>
                 )}
 
-                {mainModule === "product-ads" && (
+                {mainModule === "product-ads" && !editingAd && (
                   <button
                     onClick={() => {
                       setEditingAd({
-                        id: "",
-                        title: "",
-                        companyName: "",
+                        id: `ad-${Date.now()}`,
+                        title: "Organic Bhutanese Cordyceps & Herbal Teas",
+                        companyName: "Himalayan Bio Products Bhutan",
                         category: "Food & Organic",
                         image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80",
-                        description: "",
-                        badgeTag: "Featured Ad",
+                        description: "Premium wild-harvested Cordyceps Sinensis and high-altitude organic green herbal infusions.",
+                        badgeTag: "Featured Exhibitor Ad",
                         ctaText: "Inquire Product",
                         ctaUrl: "/register/exhibitor",
                         active: true,
                       });
-                      setShowAdModal(true);
+                      setIsDirty(true);
                     }}
                     className="px-4 py-2.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 min-h-[40px]"
                   >
@@ -1056,1155 +1084,1495 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* EVENTS MODULE */}
+            {/* TRADE EVENTS MODULE: LISTING VIEW vs SPLIT LIVE-EDITOR VIEW */}
             {mainModule === "events" && (
-              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  {cmsEvents.map((evt) => (
-                    <div key={evt.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-4 flex flex-col justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase ${evt.status === "Published" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-amber-500/20 text-amber-300"
-                            }`}>
-                            {evt.status}
-                          </span>
-                          <span className="text-[11px] text-slate-400">ID: {evt.id}</span>
-                        </div>
-
-                        <h3 className="text-base font-black text-white uppercase">{evt.title}</h3>
-                        <p className="text-xs text-[#EAA500] font-semibold">{evt.category}</p>
-                        <p className="text-xs text-slate-300 line-clamp-2">{evt.description}</p>
+              <>
+                {!editingEvent ? (
+                  /* VISUAL CARDS LISTING VIEW */
+                  <div className="space-y-6 text-left">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#03142A] border border-slate-800 p-4 rounded-xl">
+                      <div className="relative w-full sm:w-80">
+                        <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                        <input
+                          type="text"
+                          placeholder="Search trade events..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[#EAA500]"
+                        />
                       </div>
-
-                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-medium">{evt.date}</span>
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                        {["All", "Published", "Draft"].map((tab) => (
                           <button
-                            onClick={() => {
-                              setEditingEvent(evt);
-                              setEventModalTab("edit");
-                              setShowEventModal(true);
-                            }}
-                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 min-h-[36px]"
+                            key={tab}
+                            onClick={() => setStatusFilter(tab)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === tab
+                                ? "bg-[#0A4D8C] text-white shadow"
+                                : "bg-slate-900 text-slate-400 hover:text-white"
+                              }`}
                           >
-                            <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
-                            <span>Edit</span>
+                            {tab}
                           </button>
-                          <button
-                            onClick={() => handleDeleteEventCMS(evt.id)}
-                            className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 min-h-[36px] min-w-[36px] flex items-center justify-center"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* NEWS & PRESS BUREAU MODULE */}
-            {mainModule === "news" && (
-              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                  {cmsNews.map((news) => (
-                    <div key={news.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-4 flex flex-col justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase ${news.status === "Published" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-amber-500/20 text-amber-300"
-                            }`}>
-                            {news.status}
-                          </span>
-                          <span className="text-[11px] text-slate-400">{news.date}</span>
-                        </div>
-
-                        <h3 className="text-sm font-bold text-white leading-snug">{news.title}</h3>
-                        <p className="text-[11px] text-[#EAA500] font-medium">{news.category}</p>
-                        <p className="text-xs text-slate-300 line-clamp-3">{news.excerpt}</p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-                        <Link href={`/news/${news.id}`} target="_blank" className="text-slate-400 hover:text-[#EAA500] underline">
-                          View Article
-                        </Link>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingNews(news);
-                              setNewsModalTab("edit");
-                              setShowNewsModal(true);
-                            }}
-                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 min-h-[36px]"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteNewsCMS(news.id)}
-                            className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 min-h-[36px] min-w-[36px] flex items-center justify-center"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* PRODUCTS & SERVICES ADS MODULE */}
-            {mainModule === "product-ads" && (
-              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {productAds.map((ad) => (
-                    <div key={ad.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-4 flex flex-col justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase ${ad.active !== false ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-red-500/20 text-red-300"}`}>
-                            {ad.active !== false ? "Active Ad" : "Inactive"}
-                          </span>
-                          <span className="text-[11px] text-[#EAA500] font-bold">{ad.category}</span>
-                        </div>
-
-                        <div className="h-32 rounded-lg bg-cover bg-center border border-slate-800" style={{ backgroundImage: `url('${ad.image}')` }} />
-
-                        <h3 className="text-sm font-bold text-white leading-snug">{ad.title}</h3>
-                        <p className="text-[11px] text-slate-300 font-semibold">{ad.companyName}</p>
-                        <p className="text-xs text-slate-400 line-clamp-2">{ad.description}</p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-                        <button
-                          onClick={() => {
-                            const updated = { ...ad, active: !ad.active };
-                            saveCMSProductAd(updated);
-                            refreshData();
-                          }}
-                          className={`px-2.5 py-1 rounded text-[11px] font-bold uppercase transition-colors ${ad.active ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30" : "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"}`}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredEvents.map((evt) => (
+                        <div
+                          key={evt.id}
+                          className="bg-[#03142A] border border-slate-800 rounded-xl overflow-hidden shadow-lg flex flex-col justify-between hover:border-slate-700 transition-all group"
                         >
-                          {ad.active ? "Deactivate" : "Activate"}
-                        </button>
+                          <div className="space-y-3 p-5">
+                            <div className="relative h-40 rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
+                              <div
+                                className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
+                                style={{ backgroundImage: `url('${evt.image}')` }}
+                              />
+                              <div className="absolute top-3 right-3">
+                                <span
+                                  className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase tracking-wider ${evt.status === "Published"
+                                      ? "bg-emerald-500/90 text-white shadow"
+                                      : "bg-amber-500/90 text-slate-950 shadow"
+                                    }`}
+                                >
+                                  ● {evt.status}
+                                </span>
+                              </div>
+                            </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingAd(ad);
-                              setShowAdModal(true);
-                            }}
-                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 min-h-[36px]"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAdCMS(ad.id)}
-                            className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 min-h-[36px] min-w-[36px] flex items-center justify-center"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                            <div className="space-y-1">
+                              <h3 className="text-base font-black text-white uppercase group-hover:text-[#EAA500] transition-colors leading-snug">
+                                {evt.title}
+                              </h3>
+                              <p className="text-xs text-[#EAA500] font-semibold">{evt.category}</p>
+                              <p className="text-xs text-slate-400 line-clamp-2 pt-1">{evt.description}</p>
+                            </div>
+                          </div>
 
-            {/* HERO BANNER MODULE */}
-            {mainModule === "hero" && heroConfig && (
-              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-8 space-y-8 shadow-xl text-left max-w-4xl">
-                <form onSubmit={handleSaveHero} className="space-y-8 text-xs">
-
-                  {/* Row 1: Main Headline & Gold Accents */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">Title Headline Lines</p>
-                      <p className="text-[11px] text-slate-400">Main hero title &amp; gold text accents</p>
-                    </div>
-                    <div className="w-full sm:w-2/3 space-y-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Main White Headline Line</label>
-                        <input
-                          type="text"
-                          value={heroConfig.headlineMain || ""}
-                          onChange={(e) => setHeroConfig({ ...heroConfig, headlineMain: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Gold Accent Line 1</label>
-                        <input
-                          type="text"
-                          value={heroConfig.headlineHighlight1 || ""}
-                          onChange={(e) => setHeroConfig({ ...heroConfig, headlineHighlight1: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Gold Accent Line 2</label>
-                        <input
-                          type="text"
-                          value={heroConfig.headlineHighlight2 || ""}
-                          onChange={(e) => setHeroConfig({ ...heroConfig, headlineHighlight2: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: Subtitle Description */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">Subtitle Description</p>
-                    </div>
-                    <div className="w-full sm:w-2/3">
-                      <textarea
-                        rows={3}
-                        value={heroConfig.subtitle || ""}
-                        onChange={(e) => setHeroConfig({ ...heroConfig, subtitle: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500] resize-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 3: Hero Backdrop Image Upload / Drag & Drop */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">Backdrop Image</p>
-                      <p className="text-[11px] text-slate-400">Drag &amp; drop or URL</p>
-                    </div>
-                    <div className="w-full sm:w-2/3 space-y-3">
-                      <div
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                            const file = e.dataTransfer.files[0];
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              if (ev.target?.result) {
-                                setHeroConfig({ ...heroConfig, backgroundImageUrl: ev.target.result as string });
-                              }
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        className="border-2 border-dashed border-slate-700 hover:border-[#EAA500] rounded-xl p-4 text-center bg-slate-900/60 transition-colors cursor-pointer group"
-                      >
-                        <input
-                          type="file"
-                          id="hero-image-upload"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              const file = e.target.files[0];
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                if (ev.target?.result) {
-                                  setHeroConfig({ ...heroConfig, backgroundImageUrl: ev.target.result as string });
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                        <label htmlFor="hero-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                          <UploadCloud className="w-6 h-6 text-[#EAA500] group-hover:scale-110 transition-transform" />
-                          <span className="text-xs font-bold text-slate-200">
-                            Drag &amp; drop background image, or <span className="text-[#EAA500] underline">browse file</span>
-                          </span>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-16 h-10 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0 relative">
-                          {heroConfig.backgroundImageUrl ? (
-                            <div
-                              className="absolute inset-0 bg-cover bg-center"
-                              style={{ backgroundImage: `url('${heroConfig.backgroundImageUrl}')` }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">No Image</div>
-                          )}
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Or paste image URL (/hero-bhutan-expo.jpg or https://...)"
-                          value={heroConfig.backgroundImageUrl || ""}
-                          onChange={(e) => setHeroConfig({ ...heroConfig, backgroundImageUrl: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 4: 5 Stats Counters */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">5 Stats Bar Counters</p>
-                      <p className="text-[11px] text-slate-400">Homepage hero metric counters</p>
-                    </div>
-                    <div className="w-full sm:w-2/3 space-y-4">
-                      {heroConfig.stats && heroConfig.stats.map((st, idx) => (
-                        <div key={idx} className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 space-y-2">
-                          <p className="text-[10px] font-extrabold uppercase text-[#EAA500]">Stat Counter #{idx + 1}</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Title e.g. GLOBAL NETWORK"
-                              value={st.title}
-                              onChange={(e) => {
-                                const newStats = [...heroConfig.stats];
-                                newStats[idx] = { ...newStats[idx], title: e.target.value };
-                                setHeroConfig({ ...heroConfig, stats: newStats });
-                              }}
-                              className="px-3 py-2 rounded bg-slate-950 border border-slate-700 text-white text-xs"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Subtitle e.g. Connecting Markets"
-                              value={st.subtitle}
-                              onChange={(e) => {
-                                const newStats = [...heroConfig.stats];
-                                newStats[idx] = { ...newStats[idx], subtitle: e.target.value };
-                                setHeroConfig({ ...heroConfig, stats: newStats });
-                              }}
-                              className="px-3 py-2 rounded bg-slate-950 border border-slate-700 text-white text-xs"
-                            />
+                          <div className="p-4 bg-slate-900/60 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                            <span className="text-slate-400 font-medium">{evt.date}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingEvent(evt);
+                                  setIsDirty(false);
+                                }}
+                                className="px-3.5 py-1.5 rounded bg-[#0A4D8C] hover:bg-[#083e73] text-white font-bold flex items-center gap-1.5 transition-all shadow"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
+                                <span>Edit Live &rarr;</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEventCMS(evt.id)}
+                                className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
+                ) : (
+                  /* SPLIT TWO-PANEL LIVE EDITOR VIEW */
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
 
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="submit"
-                      className="w-full sm:w-auto px-8 py-3 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 min-h-[44px]"
-                    >
-                      <CheckCircle className="w-4 h-4 text-[#EAA500]" />
-                      <span>Save Hero Configuration</span>
-                    </button>
+                    {/* LEFT PANEL: EDITOR FORM (4 COLS) */}
+                    <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+
+                      {/* Top Header Bar inside Editor */}
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <button
+                          onClick={() => setEditingEvent(null)}
+                          className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-[#EAA500] font-bold"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          <span>Back to Listings</span>
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleSaveEvent("Draft")}
+                            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider"
+                          >
+                            Save Draft
+                          </button>
+                          <button
+                            onClick={() => handleSaveEvent("Published")}
+                            className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                          >
+                            <Check className="w-4 h-4 text-[#EAA500]" />
+                            <span>Publish Live</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Progressive Disclosure Tabs */}
+                      <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3">
+                        {(["details", "seo", "settings"] as const).map((tab) => (
+                          <button
+                            key={tab}
+                            onClick={() => setEditorTab(tab)}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all ${editorTab === tab
+                                ? "bg-slate-800 text-[#EAA500] border border-slate-700"
+                                : "text-slate-400 hover:text-white"
+                              }`}
+                          >
+                            {tab}
+                          </button>
+                        ))}
+                      </div>
+
+                      {editorTab === "details" && (
+                        <div className="space-y-5 text-xs">
+                          {/* Title with Character Counter */}
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                                Event Title *
+                              </label>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {(editingEvent.title || "").length} / 80
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. BIN Trade Showcase 2027"
+                              value={editingEvent.title || ""}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, title: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                            />
+                          </div>
+
+                          {/* Slug with Character Counter */}
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                                URL Slug
+                              </label>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {(editingEvent.slug || "").length} / 60
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="bin-trade-showcase-2027"
+                              value={editingEvent.slug || ""}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, slug: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-[#EAA500]"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                                Event Category *
+                              </label>
+                              <input
+                                type="text"
+                                value={editingEvent.category || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, category: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                                Dates / Duration *
+                              </label>
+                              <input
+                                type="text"
+                                value={editingEvent.date || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, date: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                                Location (City, Country)
+                              </label>
+                              <input
+                                type="text"
+                                value={editingEvent.location || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, location: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                                Expo Venue
+                              </label>
+                              <input
+                                type="text"
+                                value={editingEvent.venue || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, venue: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Visual Image Upload Dropzone */}
+                          <div>
+                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                              Cover Image Banner
+                            </label>
+                            <div className="space-y-3">
+                              {editingEvent.image && (
+                                <div className="relative h-40 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 group">
+                                  <img
+                                    src={editingEvent.image}
+                                    alt="Cover Preview"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <label htmlFor="cover-file" className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer">
+                                      Replace Image
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingEvent({ ...editingEvent, image: "" });
+                                        setIsDirty(true);
+                                      }}
+                                      className="px-3 py-1.5 rounded bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              <input
+                                type="file"
+                                id="cover-file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                      if (ev.target?.result) {
+                                        setEditingEvent({ ...editingEvent, image: ev.target.result as string });
+                                        setIsDirty(true);
+                                      }
+                                    };
+                                    reader.readAsDataURL(e.target.files[0]);
+                                  }
+                                }}
+                              />
+
+                              <input
+                                type="text"
+                                placeholder="Image URL (https://...)"
+                                value={editingEvent.image || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, image: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                                Event Description
+                              </label>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {(editingEvent.description || "").length} / 500
+                              </span>
+                            </div>
+                            <textarea
+                              rows={4}
+                              value={editingEvent.description || ""}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, description: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {editorTab === "seo" && (
+                        <div className="space-y-4 text-xs">
+                          <div>
+                            <label className="block font-extrabold uppercase text-slate-300 mb-1">SEO Title</label>
+                            <input
+                              type="text"
+                              value={editingEvent.title || ""}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, title: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-extrabold uppercase text-slate-300 mb-1">Meta Description</label>
+                            <textarea
+                              rows={3}
+                              value={editingEvent.description || ""}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, description: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                            />
+                          </div>
+
+                          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-[#EAA500]">Search Snippet Preview</span>
+                            <h4 className="text-sm font-bold text-blue-400 hover:underline cursor-pointer">{editingEvent.title} | Tobgyel Global Expos</h4>
+                            <p className="text-[11px] text-emerald-400">https://tobgyelglobalexpos.com/events/{editingEvent.slug}</p>
+                            <p className="text-xs text-slate-300 line-clamp-2">{editingEvent.description}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {editorTab === "settings" && (
+                        <div className="space-y-4 text-xs">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
+                            <div>
+                              <p className="font-bold text-white">Publish Status</p>
+                              <p className="text-[11px] text-slate-400">Make event public on website</p>
+                            </div>
+                            <select
+                              value={editingEvent.status || "Published"}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, status: e.target.value as any });
+                                setIsDirty(true);
+                              }}
+                              className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-white font-bold"
+                            >
+                              <option value="Published">Published</option>
+                              <option value="Draft">Draft</option>
+                              <option value="Archived">Archived</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
+                            <div>
+                              <p className="font-bold text-white">Feature on Homepage</p>
+                              <p className="text-[11px] text-slate-400">Show in main homepage upcoming events carousel</p>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={editingEvent.featuredOnHome !== false}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, featuredOnHome: e.target.checked });
+                                setIsDirty(true);
+                              }}
+                              className="w-5 h-5 rounded accent-[#0A4D8C]"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* RIGHT PANEL: LIVE WEBSITE PREVIEW (8 COLS STICKY) */}
+                    <div className="lg:col-span-8">
+                      <AdminLivePreview
+                        title="Live Event Card & Detail Preview"
+                        subtitle="Updates instantly as you edit fields on the left"
+                      >
+                        <div className="p-6 bg-[#03142A] text-white min-h-[480px] flex flex-col justify-end relative overflow-hidden text-left">
+                          <div
+                            className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity"
+                            style={{ backgroundImage: `url('${editingEvent.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80"}')` }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/80 to-transparent" />
+
+                          <div className="relative z-10 space-y-3">
+                            <span className="px-3 py-1 rounded bg-[#EAA500] text-slate-950 text-[10px] font-black uppercase tracking-wider w-fit block">
+                              {editingEvent.category || "Trade & Commerce"}
+                            </span>
+
+                            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                              {editingEvent.title || "Untitled Trade Event"}
+                            </h2>
+
+                            <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                              {editingEvent.description || "Event description preview..."}
+                            </p>
+
+                            <div className="pt-2 flex flex-col gap-1.5 text-xs text-slate-200 font-semibold">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-[#EAA500]" />
+                                <span>{editingEvent.date || "Date Pending"}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-[#EAA500]" />
+                                <span>{editingEvent.venue || "Phuentsholing Expo Pavilion"}, {editingEvent.location || "Bhutan"}</span>
+                              </div>
+                            </div>
+
+                            <div className="pt-2">
+                              <CompactCardCountdown />
+                            </div>
+                          </div>
+                        </div>
+                      </AdminLivePreview>
+                    </div>
+
                   </div>
-                </form>
-              </div>
+                )}
+              </>
             )}
 
-            {/* ABOUT CMS MODULE */}
-            {mainModule === "about" && aboutConfig && (
-              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-8 space-y-8 shadow-xl text-left max-w-4xl">
-                <form onSubmit={handleSaveAbout} className="space-y-8 text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">About Title &amp; Subtitle</p>
+            {/* NEWS & PRESS BUREAU MODULE: LISTING VIEW vs SPLIT LIVE-EDITOR VIEW */}
+            {mainModule === "news" && (
+              <>
+                {!editingNews ? (
+                  /* VISUAL CARDS LISTING VIEW */
+                  <div className="space-y-6 text-left">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#03142A] border border-slate-800 p-4 rounded-xl">
+                      <div className="relative w-full sm:w-80">
+                        <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                        <input
+                          type="text"
+                          placeholder="Search news releases..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[#EAA500]"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                        {["All", "Published", "Draft"].map((tab) => (
+                          <button
+                            key={tab}
+                            onClick={() => setStatusFilter(tab)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === tab
+                                ? "bg-[#0A4D8C] text-white shadow"
+                                : "bg-slate-900 text-slate-400 hover:text-white"
+                              }`}
+                          >
+                            {tab}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="w-full sm:w-2/3 space-y-3">
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {filteredNews.map((news) => (
+                        <div
+                          key={news.id}
+                          className="bg-[#03142A] border border-slate-800 rounded-xl overflow-hidden shadow-lg flex flex-col justify-between hover:border-slate-700 transition-all group"
+                        >
+                          <div className="space-y-3 p-5">
+                            <div className="relative h-36 rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
+                              <div
+                                className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
+                                style={{ backgroundImage: `url('${news.image}')` }}
+                              />
+                              <div className="absolute top-2.5 right-2.5">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${news.status === "Published"
+                                      ? "bg-emerald-500/90 text-white shadow"
+                                      : "bg-amber-500/90 text-slate-950 shadow"
+                                    }`}
+                                >
+                                  ● {news.status}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <h3 className="text-sm font-bold text-white leading-snug group-hover:text-[#0A4D8C] transition-colors">
+                                {news.title}
+                              </h3>
+                              <p className="text-[11px] text-[#EAA500] font-semibold">{news.date}</p>
+                              <p className="text-xs text-slate-400 line-clamp-3 pt-1">{news.excerpt}</p>
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-slate-900/60 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                            <Link href={`/news/${news.id}`} target="_blank" className="text-slate-400 hover:text-[#EAA500] underline text-[11px]">
+                              View Live
+                            </Link>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingNews(news);
+                                  setIsDirty(false);
+                                }}
+                                className="px-3.5 py-1.5 rounded bg-[#0A4D8C] hover:bg-[#083e73] text-white font-bold flex items-center gap-1.5 transition-all shadow"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
+                                <span>Edit Live &rarr;</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteNewsCMS(news.id)}
+                                className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  /* SPLIT TWO-PANEL LIVE EDITOR VIEW FOR NEWS */
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+
+                    {/* LEFT PANEL: NEWS EDITOR FORM (4 COLS) */}
+                    <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <button
+                          onClick={() => setEditingNews(null)}
+                          className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-[#EAA500] font-bold"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          <span>Back to News List</span>
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleSaveNews("Draft")}
+                            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider"
+                          >
+                            Save Draft
+                          </button>
+                          <button
+                            onClick={() => handleSaveNews("Published")}
+                            className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                          >
+                            <Check className="w-4 h-4 text-[#EAA500]" />
+                            <span>Publish Live</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 text-xs">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                              Article Headline Title *
+                            </label>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {(editingNews.title || "").length} / 90
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            required
+                            value={editingNews.title || ""}
+                            onChange={(e) => {
+                              setEditingNews({ ...editingNews, title: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block font-extrabold uppercase text-slate-300 mb-1">Category Badge</label>
+                            <input
+                              type="text"
+                              value={editingNews.category || ""}
+                              onChange={(e) => {
+                                setEditingNews({ ...editingNews, category: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-extrabold uppercase text-slate-300 mb-1">Publication Date</label>
+                            <input
+                              type="text"
+                              value={editingNews.date || ""}
+                              onChange={(e) => {
+                                setEditingNews({ ...editingNews, date: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-extrabold uppercase text-slate-300 mb-1">Header Image URL</label>
+                          <input
+                            type="text"
+                            value={editingNews.image || ""}
+                            onChange={(e) => {
+                              setEditingNews({ ...editingNews, image: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                              Short Summary Excerpt *
+                            </label>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {(editingNews.excerpt || "").length} / 250
+                            </span>
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={editingNews.excerpt || ""}
+                            onChange={(e) => {
+                              setEditingNews({ ...editingNews, excerpt: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                              Full Article Content Body (Paragraphs)
+                            </label>
+                            <span className="text-[10px] text-slate-400">Separate paragraphs with new lines</span>
+                          </div>
+                          <textarea
+                            rows={6}
+                            placeholder="Enter full article text..."
+                            value={Array.isArray(editingNews.content) ? editingNews.content.join("\n\n") : (editingNews.content || "")}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const paras = raw.split("\n\n").filter(p => p.trim() !== "");
+                              setEditingNews({ ...editingNews, content: paras.length > 0 ? paras : [raw] });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-y"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-extrabold uppercase text-slate-300 mb-1">Media Contact Email</label>
+                          <input
+                            type="email"
+                            value={editingNews.mediaContactEmail || "info@tobgyelglobalxpos.com"}
+                            onChange={(e) => {
+                              setEditingNews({ ...editingNews, mediaContactEmail: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT PANEL: FULL ARTICLE LIVE PREVIEW (8 COLS) */}
+                    <div className="lg:col-span-8">
+                      <AdminLivePreview
+                        title="Live Article Page Preview"
+                        subtitle="Real-time rendering of full press release article"
+                      >
+                        <div className="bg-slate-50 text-slate-900 text-left min-h-[500px]">
+                          {/* Hero Header */}
+                          <div className="bg-[#03142A] text-white p-6 relative overflow-hidden">
+                            {editingNews.image && (
+                              <div
+                                className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity"
+                                style={{ backgroundImage: `url('${editingNews.image}')` }}
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#03142A] via-[#03142A]/90 to-transparent" />
+
+                            <div className="relative z-10 space-y-2">
+                              <span className="text-[11px] text-[#EAA500] font-bold uppercase tracking-wider">
+                                ← Back to All News
+                              </span>
+                              <h1 className="text-lg sm:text-xl font-black uppercase text-white leading-snug">
+                                {editingNews.title || "Article Title Preview"}
+                              </h1>
+                              <div className="flex items-center gap-3 text-xs text-slate-300 pt-1 border-t border-slate-800">
+                                <span>Published: {editingNews.date || new Date().toLocaleDateString()}</span>
+                                <span>•</span>
+                                <span>{editingNews.category || "Official Press Release"}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Body Content */}
+                          <div className="p-6 space-y-5">
+                            {editingNews.excerpt && (
+                              <p className="text-sm font-bold text-[#03142A] leading-relaxed border-l-4 border-[#EAA500] pl-3 bg-white p-3 rounded-r-lg border border-slate-200">
+                                {editingNews.excerpt}
+                              </p>
+                            )}
+
+                            <div className="space-y-3 text-xs text-slate-700 leading-relaxed bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                              {(Array.isArray(editingNews.content) ? editingNews.content : [editingNews.content || "Article text body preview..."]).map((para, idx) => (
+                                <p key={idx}>{para}</p>
+                              ))}
+
+                              {/* Media Contact Box */}
+                              <div className="mt-4 p-3 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-600 space-y-1">
+                                <p className="font-bold text-slate-900">Media &amp; Press Contact</p>
+                                <p>Tobgyel Global Expos Press Bureau &bull; Phuentsholing, Bhutan</p>
+                                <p>Email: <span className="text-[#0A4D8C] font-semibold underline">{editingNews.mediaContactEmail || "info@tobgyelglobalxpos.com"}</span></p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </AdminLivePreview>
+                    </div>
+
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* PRODUCTS & ADS MODULE */}
+            {mainModule === "product-ads" && (
+              <>
+                {!editingAd ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-left">
+                    {productAds.map((ad) => (
+                      <div key={ad.id} className="bg-[#03142A] border border-slate-800 rounded-xl p-4 space-y-4 flex flex-col justify-between shadow-lg">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold uppercase ${ad.active !== false ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-red-500/20 text-red-300"}`}>
+                              {ad.active !== false ? "Active Ad" : "Inactive"}
+                            </span>
+                            <span className="text-[11px] text-[#EAA500] font-bold">{ad.category}</span>
+                          </div>
+
+                          <div className="h-32 rounded-lg bg-cover bg-center border border-slate-800" style={{ backgroundImage: `url('${ad.image}')` }} />
+
+                          <h3 className="text-sm font-bold text-white leading-snug">{ad.title}</h3>
+                          <p className="text-[11px] text-slate-300 font-semibold">{ad.companyName}</p>
+                          <p className="text-xs text-slate-400 line-clamp-2">{ad.description}</p>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                          <button
+                            onClick={() => {
+                              setEditingAd(ad);
+                              setIsDirty(false);
+                            }}
+                            className="px-3.5 py-1.5 rounded bg-[#0A4D8C] hover:bg-[#083e73] text-white font-bold flex items-center gap-1.5 shadow"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-[#EAA500]" />
+                            <span>Edit Live &rarr;</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteAdCMS(ad.id)}
+                            className="p-2 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* SPLIT TWO-PANEL LIVE EDITOR VIEW FOR PRODUCTS & ADS */
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+
+                    {/* LEFT PANEL: PRODUCT AD FORM (4 COLS) */}
+                    <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <button
+                          onClick={() => setEditingAd(null)}
+                          className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-[#EAA500] font-bold"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                          <span>Back to Ads</span>
+                        </button>
+
+                        <button
+                          onClick={handleSaveAd}
+                          className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                        >
+                          <Check className="w-4 h-4 text-[#EAA500]" />
+                          <span>Save Product Ad</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 text-xs">
+                        <div>
+                          <label className="block font-extrabold uppercase text-slate-300 mb-1">Product Title *</label>
+                          <input
+                            type="text"
+                            value={editingAd.title || ""}
+                            onChange={(e) => {
+                              setEditingAd({ ...editingAd, title: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-extrabold uppercase text-slate-300 mb-1">Exhibitor Company Name *</label>
+                          <input
+                            type="text"
+                            value={editingAd.companyName || ""}
+                            onChange={(e) => {
+                              setEditingAd({ ...editingAd, companyName: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-extrabold uppercase text-slate-300 mb-1">Image URL</label>
+                          <input
+                            type="text"
+                            value={editingAd.image || ""}
+                            onChange={(e) => {
+                              setEditingAd({ ...editingAd, image: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-extrabold uppercase text-slate-300 mb-1">Ad Description</label>
+                          <textarea
+                            rows={3}
+                            value={editingAd.description || ""}
+                            onChange={(e) => {
+                              setEditingAd({ ...editingAd, description: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT PANEL: LIVE PRODUCT AD PREVIEW (8 COLS) */}
+                    <div className="lg:col-span-8">
+                      <AdminLivePreview
+                        title="Live Product Ad Card Preview"
+                        subtitle="Updates live as you edit exhibitor ads"
+                      >
+                        <div className="p-6 bg-white text-slate-900 text-left space-y-4">
+                          <div className="relative h-48 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                            <img src={editingAd.image} alt="Ad Cover" className="w-full h-full object-cover" />
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-700 text-[10px] font-bold uppercase">
+                              {editingAd.category || "Exhibitor Showcase"}
+                            </span>
+                            <h3 className="text-lg font-extrabold text-[#03142A]">{editingAd.title || "Product Title"}</h3>
+                            <p className="text-xs font-semibold text-slate-500">By {editingAd.companyName || "Exhibitor Enterprise"}</p>
+                            <p className="text-xs text-slate-600 leading-relaxed pt-1">{editingAd.description || "Description preview..."}</p>
+                          </div>
+                        </div>
+                      </AdminLivePreview>
+                    </div>
+
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* HERO BANNER MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "hero" && heroConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Hero Banner Fields</h3>
+                    <button
+                      onClick={handleSaveHero}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Hero</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Main White Headline</label>
                       <input
                         type="text"
-                        value={aboutConfig.title}
-                        onChange={(e) => setAboutConfig({ ...aboutConfig, title: e.target.value })}
+                        value={heroConfig.headlineMain || ""}
+                        onChange={(e) => {
+                          setHeroConfig({ ...heroConfig, headlineMain: e.target.value });
+                          setIsDirty(true);
+                        }}
                         className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Gold Highlight Line 1</label>
+                      <input
+                        type="text"
+                        value={heroConfig.headlineHighlight1 || ""}
+                        onChange={(e) => {
+                          setHeroConfig({ ...heroConfig, headlineHighlight1: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Subtitle Description</label>
                       <textarea
-                        rows={2}
-                        value={aboutConfig.subtitle}
-                        onChange={(e) => setAboutConfig({ ...aboutConfig, subtitle: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500] resize-none"
+                        rows={3}
+                        value={heroConfig.subtitle || ""}
+                        onChange={(e) => {
+                          setHeroConfig({ ...heroConfig, subtitle: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
                       />
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="submit"
-                      className="w-full sm:w-auto px-8 py-3 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 min-h-[44px]"
-                    >
-                      <CheckCircle className="w-4 h-4 text-[#EAA500]" />
-                      <span>Save About Settings</span>
-                    </button>
-                  </div>
-                </form>
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Homepage Hero Preview">
+                    <Hero />
+                  </AdminLivePreview>
+                </div>
               </div>
             )}
 
-            {/* CONTACT CMS MODULE */}
+            {/* CONTACT MODULE WITH LIVE FOOTER PREVIEW */}
             {mainModule === "contact" && contactConfig && (
-              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-8 space-y-8 shadow-xl text-left max-w-4xl">
-                <form onSubmit={handleSaveContact} className="space-y-8 text-xs">
-
-                  {/* Row 1: Section Title & Form Titles */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">Section &amp; Form Headings</p>
-                      <p className="text-[11px] text-slate-400">Main footer titles</p>
-                    </div>
-                    <div className="w-full sm:w-2/3 space-y-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Section Title</label>
-                        <input
-                          type="text"
-                          value={contactConfig.sectionTitle || "Contact Us"}
-                          onChange={(e) => setContactConfig({ ...contactConfig, sectionTitle: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Form Heading</label>
-                        <input
-                          type="text"
-                          value={contactConfig.formTitle || "Send Us A Message"}
-                          onChange={(e) => setContactConfig({ ...contactConfig, formTitle: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Form Submit Button Label</label>
-                        <input
-                          type="text"
-                          value={contactConfig.formButtonLabel || "Send Message"}
-                          onChange={(e) => setContactConfig({ ...contactConfig, formButtonLabel: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: Company Name & Address */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">Company Name &amp; Physical Address</p>
-                      <p className="text-[11px] text-slate-400">Headquarters location details</p>
-                    </div>
-                    <div className="w-full sm:w-2/3 space-y-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Company Name</label>
-                        <input
-                          type="text"
-                          value={contactConfig.companyName}
-                          onChange={(e) => setContactConfig({ ...contactConfig, companyName: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Address Line 1</label>
-                        <input
-                          type="text"
-                          value={contactConfig.addressLine1}
-                          onChange={(e) => setContactConfig({ ...contactConfig, addressLine1: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Address Line 2 &amp; Country</label>
-                        <input
-                          type="text"
-                          value={contactConfig.addressLine2}
-                          onChange={(e) => setContactConfig({ ...contactConfig, addressLine2: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Phone, Email & Website */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-800/80 pb-6">
-                    <div className="w-full sm:w-1/3 space-y-1">
-                      <p className="font-bold text-white uppercase tracking-wider text-xs">Direct Contact Details</p>
-                      <p className="text-[11px] text-slate-400">Phone numbers, email, website URL</p>
-                    </div>
-                    <div className="w-full sm:w-2/3 space-y-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Phone Number</label>
-                        <input
-                          type="text"
-                          value={contactConfig.phonePrimary}
-                          onChange={(e) => setContactConfig({ ...contactConfig, phonePrimary: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Email Address</label>
-                        <input
-                          type="email"
-                          value={contactConfig.emailGeneral}
-                          onChange={(e) => setContactConfig({ ...contactConfig, emailGeneral: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Website URL Text</label>
-                        <input
-                          type="text"
-                          value={contactConfig.websiteUrl || "www.tobgyelglobalxpos.com"}
-                          onChange={(e) => setContactConfig({ ...contactConfig, websiteUrl: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-2">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Contact &amp; Footer Info</h3>
                     <button
-                      type="submit"
-                      className="w-full sm:w-auto px-8 py-3 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 min-h-[44px]"
+                      onClick={handleSaveContact}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
                     >
-                      <CheckCircle className="w-4 h-4 text-[#EAA500]" />
-                      <span>Save Contact Details</span>
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Footer</span>
                     </button>
                   </div>
-                </form>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Company Name</label>
+                      <input
+                        type="text"
+                        value={contactConfig.companyName || ""}
+                        onChange={(e) => {
+                          setContactConfig({ ...contactConfig, companyName: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-bold text-slate-300 uppercase mb-1">Phone Primary</label>
+                        <input
+                          type="text"
+                          value={contactConfig.phonePrimary || ""}
+                          onChange={(e) => {
+                            setContactConfig({ ...contactConfig, phonePrimary: e.target.value });
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-300 uppercase mb-1">General Email</label>
+                        <input
+                          type="text"
+                          value={contactConfig.emailGeneral || ""}
+                          onChange={(e) => {
+                            setContactConfig({ ...contactConfig, emailGeneral: e.target.value });
+                            setIsDirty(true);
+                          }}
+                          className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Footer Preview">
+                    <Footer />
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* WHY EXHIBIT MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "why-exhibit" && whyExhibitConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Why Exhibit Content</h3>
+                    <button
+                      onClick={handleSaveWhyExhibit}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Changes</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Headline</label>
+                      <input
+                        type="text"
+                        value={whyExhibitConfig.title || ""}
+                        onChange={(e) => {
+                          setWhyExhibitConfig({ ...whyExhibitConfig, title: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Subtitle</label>
+                      <textarea
+                        rows={3}
+                        value={whyExhibitConfig.subtitle || ""}
+                        onChange={(e) => {
+                          setWhyExhibitConfig({ ...whyExhibitConfig, subtitle: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">CTA Button Label</label>
+                      <input
+                        type="text"
+                        value={whyExhibitConfig.ctaText || "Learn More"}
+                        onChange={(e) => {
+                          setWhyExhibitConfig({ ...whyExhibitConfig, ctaText: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Homepage InfoHub & Why Exhibit Preview">
+                    <InfoHub whyExhibitConfig={whyExhibitConfig} />
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* PARTICIPANTS GUIDE MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "participants" && participantsConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Participants Guide</h3>
+                    <button
+                      onClick={handleSaveParticipants}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Guide</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Guide Headline</label>
+                      <input
+                        type="text"
+                        value={participantsConfig.title || ""}
+                        onChange={(e) => {
+                          setParticipantsConfig({ ...participantsConfig, title: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Subtitle</label>
+                      <textarea
+                        rows={3}
+                        value={participantsConfig.subtitle || ""}
+                        onChange={(e) => {
+                          setParticipantsConfig({ ...participantsConfig, subtitle: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Participants Guide Component Preview">
+                    <InfoHub participantsConfig={participantsConfig} />
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* GOVERNMENT REGULATIONS MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "regulations" && regulationsConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Gov Regulations</h3>
+                    <button
+                      onClick={handleSaveRegulations}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Regulations</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Regulations Title</label>
+                      <input
+                        type="text"
+                        value={regulationsConfig.title || ""}
+                        onChange={(e) => {
+                          setRegulationsConfig({ ...regulationsConfig, title: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Subtitle</label>
+                      <textarea
+                        rows={3}
+                        value={regulationsConfig.subtitle || ""}
+                        onChange={(e) => {
+                          setRegulationsConfig({ ...regulationsConfig, subtitle: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Gov Regulations Component Preview">
+                    <InfoHub regulationsConfig={regulationsConfig} />
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* PLAN YOUR VISIT MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "visit" && visitConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Plan Your Visit</h3>
+                    <button
+                      onClick={handleSaveVisit}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Visit Info</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Headline</label>
+                      <input
+                        type="text"
+                        value={visitConfig.title || ""}
+                        onChange={(e) => {
+                          setVisitConfig({ ...visitConfig, title: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Subtitle</label>
+                      <textarea
+                        rows={3}
+                        value={visitConfig.subtitle || ""}
+                        onChange={(e) => {
+                          setVisitConfig({ ...visitConfig, subtitle: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Plan Your Visit Component Preview">
+                    <InfoHub visitConfig={visitConfig} />
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* PARTNERS & SPONSORS MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "partners" && partnersConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">Partners &amp; Sponsors</h3>
+                    <button
+                      onClick={handleSavePartners}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Partners</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Partners Headline</label>
+                      <input
+                        type="text"
+                        value={partnersConfig.title || ""}
+                        onChange={(e) => {
+                          setPartnersConfig({ ...partnersConfig, title: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Subtitle</label>
+                      <input
+                        type="text"
+                        value={partnersConfig.subtitle || ""}
+                        onChange={(e) => {
+                          setPartnersConfig({ ...partnersConfig, subtitle: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live Partners & Sponsors Component Preview">
+                    <Partners />
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* ABOUT & VISION MODULE WITH LIVE SPLIT PREVIEW */}
+            {mainModule === "about" && aboutConfig && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-start">
+                <div className="lg:col-span-4 bg-[#03142A] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h3 className="text-sm font-bold text-white uppercase">About &amp; Vision</h3>
+                    <button
+                      onClick={handleSaveAbout}
+                      className="px-4 py-1.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white text-xs font-extrabold uppercase tracking-wider shadow flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4 text-[#EAA500]" />
+                      <span>Save Vision</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Company Headline</label>
+                      <input
+                        type="text"
+                        value={aboutConfig.title || ""}
+                        onChange={(e) => {
+                          setAboutConfig({ ...aboutConfig, title: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-300 uppercase mb-1">Vision Statement</label>
+                      <textarea
+                        rows={4}
+                        value={aboutConfig.visionStatement || ""}
+                        onChange={(e) => {
+                          setAboutConfig({ ...aboutConfig, visionStatement: e.target.value });
+                          setIsDirty(true);
+                        }}
+                        className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-8">
+                  <AdminLivePreview title="Live About & Vision Preview">
+                    <div className="p-8 bg-[#03142A] text-white text-left space-y-4 min-h-[480px]">
+                      <span className="px-3 py-1 rounded bg-[#EAA500] text-slate-950 text-[10px] font-black uppercase">
+                        About Tobgyel Global Expos
+                      </span>
+                      <h2 className="text-2xl font-black uppercase text-white">
+                        {aboutConfig.title || "Bhutan's Premier Trade Event Organizer"}
+                      </h2>
+                      <p className="text-sm text-slate-300 leading-relaxed border-l-4 border-[#0A4D8C] pl-4">
+                        {aboutConfig.visionStatement || "Connecting Himalayan and South Asian businesses through world-class trade fairs."}
+                      </p>
+                    </div>
+                  </AdminLivePreview>
+                </div>
+              </div>
+            )}
+
+            {/* SUBMISSIONS MODULES (Exhibitors, Sponsors, Visitors) */}
+            {(mainModule === "exhibitors" || mainModule === "sponsors" || mainModule === "visitors") && (
+              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      placeholder="Search submissions..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[#EAA500]"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                    {["All", "Pending", "Approved", "Rejected"].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setStatusFilter(tab)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === tab
+                            ? "bg-[#0A4D8C] text-white shadow"
+                            : "bg-slate-900 text-slate-400 hover:text-white"
+                          }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table View */}
+                <div className="overflow-x-auto rounded-xl border border-slate-800">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-900/90 text-slate-300 font-extrabold uppercase border-b border-slate-800">
+                        <th className="py-3 px-4">Entity / Name</th>
+                        <th className="py-3 px-4">Contact Info</th>
+                        <th className="py-3 px-4">Category / Detail</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80">
+                      {mainModule === "exhibitors" &&
+                        filteredExhibitors.map((exh) => (
+                          <tr key={exh.id} className="hover:bg-slate-900/50 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-white">
+                              {exh.companyName}
+                              <div className="text-[11px] text-slate-400 font-normal">{exh.contactPerson}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <div>{exh.email}</div>
+                              <div className="text-slate-400">{exh.phone}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <span className="font-semibold text-[#EAA500]">{exh.boothSize}</span>
+                              <div className="text-slate-400">{exh.sector}</div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${exh.status === "Approved"
+                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                    : exh.status === "Pending"
+                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                      : "bg-red-500/20 text-red-300 border border-red-500/40"
+                                  }`}
+                              >
+                                {exh.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleExhibitorStatus(exh.id, "Approved")}
+                                  className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleExhibitorStatus(exh.id, "Rejected")}
+                                  className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteExhibitor(exh.id)}
+                                  className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
           </main>
-
-        </div>
-      )}
-
-      {/* FULL-FEATURED ARTICLE CREATION & EDIT MODAL WITH LIVE PREVIEW */}
-      {showNewsModal && editingNews && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-          <div className="bg-[#03142A] border border-slate-800 rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-6 text-left shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
-
-            {/* Modal Top Bar with Live Preview Tabs */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <h3 className="text-sm sm:text-lg font-black uppercase text-white leading-tight">
-                  {editingNews.id ? "Edit Press Article" : "Create Press Article"}
-                </h3>
-
-                <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-700">
-                  <button
-                    onClick={() => setNewsModalTab("edit")}
-                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${newsModalTab === "edit" ? "bg-[#0A4D8C] text-white shadow" : "text-slate-400 hover:text-white"
-                      }`}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setNewsModalTab("preview")}
-                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 ${newsModalTab === "preview" ? "bg-[#EAA500] text-[#03142A] shadow" : "text-slate-400 hover:text-white"
-                      }`}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Preview</span>
-                  </button>
-                </div>
-              </div>
-
-              <button onClick={() => setShowNewsModal(false)} className="text-slate-400 hover:text-white text-xl p-1">✕</button>
-            </div>
-
-            {/* TAB 1: EDIT FIELDS FORM */}
-            {newsModalTab === "edit" && (
-              <form onSubmit={handleSaveNews} className="space-y-5 text-xs">
-
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Article Headline</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter press release headline..."
-                    value={editingNews.title || ""}
-                    onChange={(e) => setEditingNews({ ...editingNews, title: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-bold text-white uppercase mb-1">Category Sector Tag</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Press Release | Trade & Commerce"
-                      value={editingNews.category || ""}
-                      onChange={(e) => setEditingNews({ ...editingNews, category: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-white uppercase mb-1">Publish Date</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. May 15, 2024"
-                      value={editingNews.date || ""}
-                      onChange={(e) => setEditingNews({ ...editingNews, date: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                    />
-                  </div>
-                </div>
-
-                {/* Featured Cover Image: Drag & Drop + URL */}
-                <div className="space-y-2">
-                  <label className="block font-bold text-white uppercase mb-1">
-                    Cover Image (URL or Drag &amp; Drop File Upload)
-                  </label>
-
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        const file = e.dataTransfer.files[0];
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          if (ev.target?.result) {
-                            setEditingNews({ ...editingNews, image: ev.target.result as string });
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="border-2 border-dashed border-slate-700 hover:border-[#EAA500] rounded-xl p-4 text-center bg-slate-900/60 transition-colors cursor-pointer group"
-                  >
-                    <input
-                      type="file"
-                      id="news-image-upload"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            if (ev.target?.result) {
-                              setEditingNews({ ...editingNews, image: ev.target.result as string });
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <label htmlFor="news-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                      <UploadCloud className="w-7 h-7 text-[#EAA500] group-hover:scale-110 transition-transform" />
-                      <span className="text-xs font-bold text-slate-200">
-                        Drag &amp; drop image here, or <span className="text-[#EAA500] underline">browse file</span>
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-1">
-                    <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0 relative">
-                      {editingNews.image ? (
-                        <div
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url('${editingNews.image}')` }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">No Image</div>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Or paste direct image URL (https://...)"
-                      value={editingNews.image || ""}
-                      onChange={(e) => setEditingNews({ ...editingNews, image: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-[#EAA500]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Card Excerpt Summary</label>
-                  <textarea
-                    rows={2}
-                    required
-                    placeholder="Short summary displayed on homepage card..."
-                    value={editingNews.excerpt || ""}
-                    onChange={(e) => setEditingNews({ ...editingNews, excerpt: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500] resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Full Article Paragraphs</label>
-                  <textarea
-                    rows={4}
-                    required
-                    placeholder="Write detailed body paragraphs..."
-                    value={Array.isArray(editingNews.content) ? editingNews.content.join("\n\n") : editingNews.content || ""}
-                    onChange={(e) => setEditingNews({ ...editingNews, content: e.target.value.split("\n\n") })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500] resize-none"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setNewsModalTab("preview")}
-                    className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#EAA500] font-bold text-xs flex items-center gap-1.5 min-h-[40px]"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Preview</span>
-                  </button>
-
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowNewsModal(false)}
-                      className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold min-h-[40px]"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold uppercase tracking-wider shadow-lg min-h-[40px]"
-                    >
-                      Publish
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-
-            {/* TAB 2: LIVE PREVIEW */}
-            {newsModalTab === "preview" && (
-              <div className="space-y-6">
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 shrink-0" />
-                  <span>Live Preview Mode: Exact preview of public article card.</span>
-                </div>
-
-                <div className="flex flex-col bg-white rounded-xl overflow-hidden border border-slate-200 shadow-xl max-w-sm mx-auto text-left text-slate-900">
-                  <div className="relative h-48 overflow-hidden bg-slate-100">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{ backgroundImage: `url('${editingNews.image}')` }}
-                    />
-                  </div>
-                  <div className="p-6 space-y-3">
-                    <span className="text-xs font-bold text-[#EAA500] uppercase tracking-wider">
-                      {editingNews.category || "Press Release"}
-                    </span>
-                    <h3 className="text-base font-bold text-[#03142A] leading-snug">
-                      {editingNews.title || "Untitled Article"}
-                    </h3>
-                    <p className="text-xs text-slate-500 font-semibold">{editingNews.date || "May 15, 2024"}</p>
-                    <p className="text-xs text-slate-600 line-clamp-3">{editingNews.excerpt}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setNewsModalTab("edit")}
-                    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[40px]"
-                  >
-                    ← Back
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveNews}
-                    className="px-6 py-2.5 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 min-h-[40px]"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Confirm &amp; Commit</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* FULL-FEATURED EVENT CREATION & EDIT MODAL WITH LIVE PREVIEW */}
-      {showEventModal && editingEvent && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-          <div className="bg-[#03142A] border border-slate-800 rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-6 text-left shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
-
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <h3 className="text-sm sm:text-lg font-black uppercase text-white leading-tight">
-                  {editingEvent.id ? "Edit Trade Event" : "Create Trade Event"}
-                </h3>
-
-                <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-700">
-                  <button
-                    onClick={() => setEventModalTab("edit")}
-                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${eventModalTab === "edit" ? "bg-[#0A4D8C] text-white shadow" : "text-slate-400 hover:text-white"
-                      }`}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setEventModalTab("preview")}
-                    className={`px-2.5 py-1 rounded text-xs font-bold transition-all flex items-center gap-1 ${eventModalTab === "preview" ? "bg-[#EAA500] text-[#03142A] shadow" : "text-slate-400 hover:text-white"
-                      }`}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Preview</span>
-                  </button>
-                </div>
-              </div>
-
-              <button onClick={() => setShowEventModal(false)} className="text-slate-400 hover:text-white text-xl p-1">✕</button>
-            </div>
-
-            {eventModalTab === "edit" && (
-              <form onSubmit={handleSaveEvent} className="space-y-5 text-xs">
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Event Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter trade expo title..."
-                    value={editingEvent.title || ""}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-bold text-white uppercase mb-1">Category Sectors</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Construction | Food | Tourism"
-                      value={editingEvent.category || ""}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, category: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-white uppercase mb-1">Date Range</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. May 20 – 23, 2027"
-                      value={editingEvent.date || ""}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                    />
-                  </div>
-                </div>
-
-                {/* Cover Image: Drag & Drop + URL */}
-                <div className="space-y-2">
-                  <label className="block font-bold text-white uppercase mb-1">
-                    Cover Image (URL or Drag &amp; Drop File Upload)
-                  </label>
-
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        const file = e.dataTransfer.files[0];
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          if (ev.target?.result) {
-                            setEditingEvent({ ...editingEvent, image: ev.target.result as string });
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="border-2 border-dashed border-slate-700 hover:border-[#EAA500] rounded-xl p-4 text-center bg-slate-900/60 transition-colors cursor-pointer group"
-                  >
-                    <input
-                      type="file"
-                      id="event-image-upload"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            if (ev.target?.result) {
-                              setEditingEvent({ ...editingEvent, image: ev.target.result as string });
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <label htmlFor="event-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                      <UploadCloud className="w-7 h-7 text-[#EAA500] group-hover:scale-110 transition-transform" />
-                      <span className="text-xs font-bold text-slate-200">
-                        Drag &amp; drop image here, or <span className="text-[#EAA500] underline">browse file</span>
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-1">
-                    <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0 relative">
-                      {editingEvent.image ? (
-                        <div
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url('${editingEvent.image}')` }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">No Image</div>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Or paste direct image URL (https://...)"
-                      value={editingEvent.image || ""}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, image: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-[#EAA500]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Detailed Description</label>
-                  <textarea
-                    rows={4}
-                    required
-                    value={editingEvent.description || ""}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500] resize-none"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setEventModalTab("preview")}
-                    className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#EAA500] font-bold text-xs flex items-center gap-1.5 min-h-[40px]"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Preview</span>
-                  </button>
-
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowEventModal(false)}
-                      className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold min-h-[40px]"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold uppercase tracking-wider shadow-lg min-h-[40px]"
-                    >
-                      Publish
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-
-            {eventModalTab === "preview" && (
-              <div className="space-y-6">
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 shrink-0" />
-                  <span>Live Preview Mode: Exact preview of public event card.</span>
-                </div>
-
-                <div className="group relative rounded-xl overflow-hidden shadow-xl border border-slate-700 bg-[#03142A] min-h-[340px] flex flex-col justify-end text-left max-w-md mx-auto">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url('${editingEvent.image}')` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/85 to-transparent" />
-
-                  <div className="relative p-6 space-y-2.5 z-10">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#EAA500] text-[#03142A] text-[10px] font-extrabold uppercase">
-                      <Sparkles className="w-3 h-3" />
-                      <span>{editingEvent.category || "Trade & Commerce"}</span>
-                    </span>
-
-                    <h3 className="text-xl font-black text-white uppercase leading-tight">
-                      {editingEvent.title || "Untitled Event"}
-                    </h3>
-
-                    <div className="pt-2 flex flex-col gap-1.5 text-xs font-semibold text-slate-200">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-[#EAA500]" />
-                        <span>{editingEvent.date || "May 20 – 23, 2027"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#EAA500]" />
-                        <span>{editingEvent.location || "Phuentsholing, Bhutan"}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setEventModalTab("edit")}
-                    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[40px]"
-                  >
-                    ← Back
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveEvent}
-                    className="px-6 py-2.5 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 min-h-[40px]"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Confirm &amp; Commit</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* PRODUCT AD EDIT / CREATE MODAL */}
-      {showAdModal && editingAd && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#03142A] border border-slate-700/80 rounded-2xl max-w-2xl w-full p-4 sm:p-6 space-y-5 shadow-2xl text-left my-auto max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-[#0A4D8C] text-[#EAA500]">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-black text-white uppercase tracking-wider">
-                  {editingAd.id ? "Edit Product Advertisement" : "Create Product Advertisement"}
-                </h3>
-              </div>
-              <button
-                onClick={() => {
-                  setShowAdModal(false);
-                  setEditingAd(null);
-                }}
-                className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveAd} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-white uppercase mb-1">Product / Service Ad Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Organic Bhutanese Cordyceps & Herbal Tea Range"
-                  value={editingAd.title || ""}
-                  onChange={(e) => setEditingAd({ ...editingAd, title: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Company / Exhibitor Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Himalayan Bio Products Bhutan"
-                    value={editingAd.companyName || ""}
-                    onChange={(e) => setEditingAd({ ...editingAd, companyName: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Category</label>
-                  <select
-                    value={editingAd.category || "Food & Organic"}
-                    onChange={(e) => setEditingAd({ ...editingAd, category: e.target.value as any })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                  >
-                    <option value="Food & Organic">Food &amp; Organic</option>
-                    <option value="Machinery & Tech">Machinery &amp; Tech</option>
-                    <option value="Handicrafts & Luxury">Handicrafts &amp; Luxury</option>
-                    <option value="Services & Tourism">Services &amp; Tourism</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Badge Tag</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Featured Exhibitor Ad"
-                    value={editingAd.badgeTag || ""}
-                    onChange={(e) => setEditingAd({ ...editingAd, badgeTag: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-white uppercase mb-1">Button CTA Text</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Inquire Booth Samples"
-                    value={editingAd.ctaText || ""}
-                    onChange={(e) => setEditingAd({ ...editingAd, ctaText: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-white uppercase mb-1">Image URL</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="https://..."
-                  value={editingAd.image || ""}
-                  onChange={(e) => setEditingAd({ ...editingAd, image: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-white uppercase mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Enter product description..."
-                  value={editingAd.description || ""}
-                  onChange={(e) => setEditingAd({ ...editingAd, description: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="adActiveCheck"
-                  checked={editingAd.active !== false}
-                  onChange={(e) => setEditingAd({ ...editingAd, active: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-[#EAA500] focus:ring-0"
-                />
-                <label htmlFor="adActiveCheck" className="text-xs font-bold text-white cursor-pointer">
-                  Activate Ad (Visible on Website Marketplace)
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAdModal(false);
-                    setEditingAd(null);
-                  }}
-                  className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[40px]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 min-h-[40px]"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Save Advertisement</span>
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 

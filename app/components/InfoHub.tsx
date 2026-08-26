@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Check,
@@ -21,10 +21,84 @@ import {
   ChevronUp
 } from "lucide-react";
 
-export default function InfoHub() {
+import {
+  getCMSWhyExhibit,
+  getCMSParticipants,
+  getCMSRegulations,
+  getCMSVisit,
+  WhyExhibitCMS,
+  ParticipantsCMS,
+  RegulationsCMS,
+  VisitCMS
+} from "@/app/lib/cmsStore";
+
+interface InfoHubProps {
+  whyExhibitConfig?: WhyExhibitCMS | null;
+  participantsConfig?: ParticipantsCMS | null;
+  regulationsConfig?: RegulationsCMS | null;
+  visitConfig?: VisitCMS | null;
+}
+
+export default function InfoHub({
+  whyExhibitConfig: propWhy,
+  participantsConfig: propPart,
+  regulationsConfig: propReg,
+  visitConfig: propVisit,
+}: InfoHubProps) {
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [regulationsOpen, setRegulationsOpen] = useState(false);
   const [visitOpen, setVisitOpen] = useState(false);
+
+  const [whyConfig, setWhyConfig] = useState<WhyExhibitCMS | null>(propWhy || null);
+  const [partConfig, setPartConfig] = useState<ParticipantsCMS | null>(propPart || null);
+  const [regConfig, setRegConfig] = useState<RegulationsCMS | null>(propReg || null);
+  const [visConfig, setVisConfig] = useState<VisitCMS | null>(propVisit || null);
+
+  useEffect(() => {
+    if (propWhy !== undefined) setWhyConfig(propWhy);
+    else setWhyConfig(getCMSWhyExhibit());
+
+    if (propPart !== undefined) setPartConfig(propPart);
+    else setPartConfig(getCMSParticipants());
+
+    if (propReg !== undefined) setRegConfig(propReg);
+    else setRegConfig(getCMSRegulations());
+
+    if (propVisit !== undefined) setVisConfig(propVisit);
+    else setVisConfig(getCMSVisit());
+  }, [propWhy, propPart, propReg, propVisit]);
+
+  const whyPoints = whyConfig?.points?.map(p => p.title) || [
+    "Meet qualified buyers",
+    "Expand into Bhutan",
+    "Connect with regional partners",
+    "Increase brand visibility",
+    "Launch products & services",
+  ];
+
+  const participantLinks = partConfig?.links?.map(l => ({ icon: FileText, text: l.title, href: l.href || "/participants" })) || [
+    { icon: FileText, text: "Visa & Entry", href: "/participants" },
+    { icon: Building, text: "Hotels", href: "/participants" },
+    { icon: Truck, text: "Logistics", href: "/participants" },
+    { icon: Shield, text: "Customs", href: "/participants" },
+    { icon: Receipt, text: "Tax Information", href: "/participants" },
+  ];
+
+  const regulationItems = regConfig?.guidelines?.map(g => ({ icon: FileText, text: g.title, href: "/regulations" })) || [
+    { icon: FileText, text: "Immigration Rules", href: "/regulations" },
+    { icon: FileText, text: "Import Procedures", href: "/regulations" },
+    { icon: FileText, text: "Tax & Duty Regulations", href: "/regulations" },
+    { icon: FileText, text: "Business Compliance", href: "/regulations" },
+    { icon: FileText, text: "Event Participation", href: "/regulations" },
+  ];
+
+  const visitItems = visConfig?.cards?.map(c => ({ icon: Compass, text: c.title, href: "/visit" })) || [
+    { icon: Compass, text: "Travel Information", href: "/visit" },
+    { icon: Building, text: "Accommodation", href: "/visit" },
+    { icon: Car, text: "Transportation", href: "/visit" },
+    { icon: Sun, text: "Weather", href: "/visit" },
+    { icon: Contact, text: "Useful Contacts", href: "/visit" },
+  ];
 
   return (
     <section className="py-10 sm:py-18 bg-white border-b border-slate-200">
@@ -39,18 +113,14 @@ export default function InfoHub() {
               <Handshake className="w-6 h-6 text-[#03142A] stroke-[1.5] shrink-0" />
               <div>
                 <h3 className="text-sm font-black tracking-wider text-[#03142A] uppercase font-sans">
-                  WHY EXHIBIT?
+                  {whyConfig?.title || "WHY EXHIBIT?"}
                 </h3>
                 <div className="w-8 h-0.5 bg-[#EAA500] mt-1" />
               </div>
             </div>
 
             <ul className="space-y-2 pt-1 text-xs text-slate-800 font-semibold">
-              {[
-                "Meet qualified international buyers",
-                "Expand market footprint into Bhutan",
-                "Connect with regional government partners",
-              ].map((item, idx) => (
+              {whyPoints.slice(0, 3).map((item, idx) => (
                 <li key={idx} className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-[#008E48] stroke-[2.5] shrink-0" />
                   <span>{item}</span>
@@ -63,7 +133,7 @@ export default function InfoHub() {
                 href="/exhibit"
                 className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded bg-[#03142A] hover:bg-[#072448] text-white font-extrabold text-xs uppercase tracking-wider transition-colors min-h-[44px]"
               >
-                Learn More
+                {whyConfig?.ctaText || "Learn More"}
               </Link>
             </div>
           </div>
@@ -78,9 +148,11 @@ export default function InfoHub() {
                 <Globe className="w-6 h-6 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-xs font-black tracking-wider text-[#03142A] uppercase font-sans">
-                    INTERNATIONAL PARTICIPANTS
+                    {partConfig?.title || "INTERNATIONAL PARTICIPANTS"}
                   </h3>
-                  <span className="text-[11px] text-slate-500 font-medium">Visa, Hotels, Customs & Logistics</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {partConfig?.subtitle || "Visa, Hotels, Customs & Logistics"}
+                  </span>
                 </div>
               </div>
               {participantsOpen ? (
@@ -93,18 +165,12 @@ export default function InfoHub() {
             {participantsOpen && (
               <div className="px-5 pb-5 pt-1 border-t border-slate-200/80 space-y-3 animate-fade-in">
                 <ul className="space-y-2.5 text-xs font-semibold text-slate-800">
-                  {[
-                    { icon: FileText, text: "Visa & Entry Formalities" },
-                    { icon: Building, text: "Official Hotel Accommodations" },
-                    { icon: Truck, text: "Freight & Shipping Logistics" },
-                    { icon: Shield, text: "Customs Clearance & Tax Exemption" },
-                    { icon: Receipt, text: "Tax & Financial Information" },
-                  ].map((item, idx) => {
+                  {participantLinks.map((item, idx) => {
                     const ItemIcon = item.icon;
                     return (
                       <li key={idx}>
                         <Link
-                          href="/participants"
+                          href={item.href}
                           className="flex items-center gap-2.5 py-1 text-slate-800 hover:text-[#0A4D8C] transition-colors"
                         >
                           <ItemIcon className="w-4 h-4 text-slate-500 shrink-0 stroke-[1.8]" />
@@ -137,9 +203,11 @@ export default function InfoHub() {
                 <Landmark className="w-6 h-6 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-xs font-black tracking-wider text-[#03142A] uppercase font-sans">
-                    GOVERNMENT REGULATIONS
+                    {regConfig?.title || "GOVERNMENT REGULATIONS"}
                   </h3>
-                  <span className="text-[11px] text-slate-500 font-medium">Immigration, Import & Compliance</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {regConfig?.subtitle || "Immigration, Import & Compliance"}
+                  </span>
                 </div>
               </div>
               {regulationsOpen ? (
@@ -152,18 +220,12 @@ export default function InfoHub() {
             {regulationsOpen && (
               <div className="px-5 pb-5 pt-1 border-t border-slate-200/80 space-y-3 animate-fade-in">
                 <ul className="space-y-2.5 text-xs font-semibold text-slate-800">
-                  {[
-                    { icon: FileText, text: "Immigration Rules & Directives" },
-                    { icon: FileText, text: "Import & Export Regulations" },
-                    { icon: FileText, text: "Tax & Duty Structure" },
-                    { icon: FileText, text: "Business Licensing Compliance" },
-                    { icon: FileText, text: "Event Participation Policies" },
-                  ].map((item, idx) => {
+                  {regulationItems.map((item, idx) => {
                     const ItemIcon = item.icon;
                     return (
                       <li key={idx}>
                         <Link
-                          href="/regulations"
+                          href={item.href}
                           className="flex items-center gap-2.5 py-1 text-slate-800 hover:text-[#0A4D8C] transition-colors"
                         >
                           <ItemIcon className="w-4 h-4 text-slate-500 shrink-0 stroke-[1.8]" />
@@ -196,9 +258,11 @@ export default function InfoHub() {
                 <Plane className="w-6 h-6 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-xs font-black tracking-wider text-[#03142A] uppercase font-sans">
-                    PLAN YOUR VISIT
+                    {visConfig?.title || "PLAN YOUR VISIT"}
                   </h3>
-                  <span className="text-[11px] text-slate-500 font-medium">Travel, Flights & Weather</span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {visConfig?.subtitle || "Travel, Flights & Weather"}
+                  </span>
                 </div>
               </div>
               {visitOpen ? (
@@ -211,18 +275,12 @@ export default function InfoHub() {
             {visitOpen && (
               <div className="px-5 pb-5 pt-1 border-t border-slate-200/80 space-y-3 animate-fade-in">
                 <ul className="space-y-2.5 text-xs font-semibold text-slate-800">
-                  {[
-                    { icon: Compass, text: "Travel Routes to Phuentsholing" },
-                    { icon: Building, text: "Hotel Accommodations" },
-                    { icon: Car, text: "Local Taxi & Transport" },
-                    { icon: Sun, text: "Bhutan Climate & Weather" },
-                    { icon: Contact, text: "Useful Helpdesk Contacts" },
-                  ].map((item, idx) => {
+                  {visitItems.map((item, idx) => {
                     const ItemIcon = item.icon;
                     return (
                       <li key={idx}>
                         <Link
-                          href="/visit"
+                          href={item.href}
                           className="flex items-center gap-2.5 py-1 text-slate-800 hover:text-[#0A4D8C] transition-colors"
                         >
                           <ItemIcon className="w-4 h-4 text-slate-500 shrink-0 stroke-[1.8]" />
@@ -238,7 +296,7 @@ export default function InfoHub() {
                     href="/visit"
                     className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded bg-[#03142A] hover:bg-[#072448] text-white font-extrabold text-xs uppercase tracking-wider transition-colors min-h-[44px]"
                   >
-                    Visitor Guide
+                    {visConfig?.ctaText || "Visitor Guide"}
                   </Link>
                 </div>
               </div>
@@ -247,7 +305,7 @@ export default function InfoHub() {
 
         </div>
 
-        {/* DESKTOP VIEW (>= 768px): Original 4-Column Layout (100% UNCHANGED) */}
+        {/* DESKTOP VIEW (>= 768px): Original 4-Column Layout */}
         <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-slate-200">
 
           {/* Column 1: WHY EXHIBIT? */}
@@ -257,20 +315,14 @@ export default function InfoHub() {
                 <Handshake className="w-8 h-8 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-sm font-black tracking-wider text-[#03142A] uppercase font-sans">
-                    WHY EXHIBIT?
+                    {whyConfig?.title || "WHY EXHIBIT?"}
                   </h3>
                   <div className="w-8 h-0.5 bg-[#EAA500] mt-1" />
                 </div>
               </div>
 
               <ul className="space-y-3 pt-3">
-                {[
-                  "Meet qualified buyers",
-                  "Expand into Bhutan",
-                  "Connect with regional partners",
-                  "Increase brand visibility",
-                  "Launch products & services",
-                ].map((item, idx) => (
+                {whyPoints.map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 font-semibold">
                     <Check className="w-4 h-4 text-[#008E48] stroke-[2.5] shrink-0" />
                     <span>{item}</span>
@@ -284,7 +336,7 @@ export default function InfoHub() {
                 href="/exhibit"
                 className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded bg-[#03142A] hover:bg-[#072448] text-white font-extrabold text-xs uppercase tracking-wider transition-colors shadow-sm"
               >
-                Learn More
+                {whyConfig?.ctaText || "Learn More"}
               </Link>
             </div>
           </div>
@@ -296,25 +348,19 @@ export default function InfoHub() {
                 <Globe className="w-8 h-8 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-sm font-black tracking-wider text-[#03142A] uppercase font-sans leading-tight">
-                    INTERNATIONAL<br />PARTICIPANTS
+                    {partConfig?.title || "INTERNATIONAL PARTICIPANTS"}
                   </h3>
                   <div className="w-8 h-0.5 bg-[#EAA500] mt-1" />
                 </div>
               </div>
 
               <ul className="space-y-3 pt-3">
-                {[
-                  { icon: FileText, text: "Visa & Entry" },
-                  { icon: Building, text: "Hotels" },
-                  { icon: Truck, text: "Logistics" },
-                  { icon: Shield, text: "Customs" },
-                  { icon: Receipt, text: "Tax Information" },
-                ].map((item, idx) => {
+                {participantLinks.map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
                     <li key={idx}>
                       <Link
-                        href="/participants"
+                        href={item.href}
                         className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 font-semibold hover:text-[#0A4D8C] transition-colors"
                       >
                         <ItemIcon className="w-4 h-4 text-slate-600 shrink-0 stroke-[1.8]" />
@@ -343,25 +389,19 @@ export default function InfoHub() {
                 <Landmark className="w-8 h-8 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-sm font-black tracking-wider text-[#03142A] uppercase font-sans leading-tight">
-                    GOVERNMENT<br />REGULATIONS
+                    {regConfig?.title || "GOVERNMENT REGULATIONS"}
                   </h3>
                   <div className="w-8 h-0.5 bg-[#EAA500] mt-1" />
                 </div>
               </div>
 
               <ul className="space-y-3 pt-3">
-                {[
-                  { icon: FileText, text: "Immigration Rules" },
-                  { icon: FileText, text: "Import Procedures" },
-                  { icon: FileText, text: "Tax & Duty Regulations" },
-                  { icon: FileText, text: "Business Compliance" },
-                  { icon: FileText, text: "Event Participation" },
-                ].map((item, idx) => {
+                {regulationItems.map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
                     <li key={idx}>
                       <Link
-                        href="/regulations"
+                        href={item.href}
                         className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 font-semibold hover:text-[#0A4D8C] transition-colors"
                       >
                         <ItemIcon className="w-4 h-4 text-slate-600 shrink-0 stroke-[1.8]" />
@@ -390,25 +430,19 @@ export default function InfoHub() {
                 <Plane className="w-8 h-8 text-[#03142A] stroke-[1.5] shrink-0" />
                 <div>
                   <h3 className="text-sm font-black tracking-wider text-[#03142A] uppercase font-sans">
-                    PLAN YOUR VISIT
+                    {visConfig?.title || "PLAN YOUR VISIT"}
                   </h3>
                   <div className="w-8 h-0.5 bg-[#EAA500] mt-1" />
                 </div>
               </div>
 
               <ul className="space-y-3 pt-3">
-                {[
-                  { icon: Compass, text: "Travel Information" },
-                  { icon: Building, text: "Accommodation" },
-                  { icon: Car, text: "Transportation" },
-                  { icon: Sun, text: "Weather" },
-                  { icon: Contact, text: "Useful Contacts" },
-                ].map((item, idx) => {
+                {visitItems.map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
                     <li key={idx}>
                       <Link
-                        href="/visit"
+                        href={item.href}
                         className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 font-semibold hover:text-[#0A4D8C] transition-colors"
                       >
                         <ItemIcon className="w-4 h-4 text-slate-600 shrink-0 stroke-[1.8]" />
@@ -425,7 +459,7 @@ export default function InfoHub() {
                 href="/visit"
                 className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded bg-[#03142A] hover:bg-[#072448] text-white font-extrabold text-xs uppercase tracking-wider transition-colors shadow-sm"
               >
-                Visitor Guide
+                {visConfig?.ctaText || "Visitor Guide"}
               </Link>
             </div>
           </div>

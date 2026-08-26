@@ -25,6 +25,9 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
     });
   }, []);
 
+  // Display only the 4 latest published events (latest first)
+  const displayEvents = events.slice(0, 4);
+
   return (
     <section id="events" className="py-10 sm:py-18 bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
@@ -40,7 +43,7 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
         {/* MOBILE VIEW (< 768px): Horizontal Swipeable Card Carousel */}
         <div className="md:hidden mb-8">
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 px-1 -mx-1 scrollbar-none">
-            {events.map((evt) => {
+            {displayEvents.map((evt) => {
               const isTargetEvent = evt.id === "himalayan-food-trade-innovation-expo-2026" || evt.date.includes("2026");
               return (
                 <Link
@@ -90,9 +93,9 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
           </div>
         </div>
 
-        {/* DESKTOP VIEW (>= 768px): Original 2-Column Grid */}
+        {/* DESKTOP VIEW (>= 768px): Up to 4 Cards in 2-Column Grid */}
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-10">
-          {events.map((evt) => {
+          {displayEvents.map((evt) => {
             const isTargetEvent = evt.id === "himalayan-food-trade-innovation-expo-2026" || evt.date.includes("2026");
             return (
               <Link
