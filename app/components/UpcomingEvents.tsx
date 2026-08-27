@@ -11,15 +11,15 @@ interface UpcomingEventsProps {
 }
 
 export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps) {
-  const [events, setEvents] = useState<TradeEventCMS[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<TradeEventCMS[]>([]);
 
   useEffect(() => {
     const loaded = getCMSEvents();
-    if (loaded && loaded.length > 0) {
+    if (Array.isArray(loaded)) {
       setEvents(loaded.filter((e) => e.status === "Published"));
     }
     fetchCMSEventsAsync().then((fetched) => {
-      if (fetched && fetched.length > 0) {
+      if (Array.isArray(fetched)) {
         setEvents(fetched.filter((e) => e.status === "Published"));
       }
     });
@@ -40,104 +40,114 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
           <div className="w-12 h-1 bg-[#EAA500] mx-auto rounded-full" />
         </div>
 
-        {/* MOBILE VIEW (< 768px): Horizontal Swipeable Card Carousel */}
-        <div className="md:hidden mb-8">
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 px-1 -mx-1 scrollbar-none">
-            {displayEvents.map((evt) => {
-              const isTargetEvent = evt.id === "himalayan-food-trade-innovation-expo-2026" || evt.date.includes("2026");
-              return (
-                <Link
-                  key={evt.id}
-                  href={`/events/${evt.id}?from=${from}`}
-                  className="snap-start shrink-0 w-[85%] max-w-[320px] group relative rounded-xl overflow-hidden shadow-md border border-slate-200/80 bg-[#03142A] min-h-[380px] flex flex-col justify-end transition-all cursor-pointer active:scale-98"
-                >
-                  {/* Background Image with Dark Gradient Overlay */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url('${evt.image}')` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/85 to-transparent" />
-
-                  {/* Event Info Content */}
-                  <div className="relative p-5 space-y-2 z-10 text-left">
-                    <h3 className="text-lg font-black text-white tracking-wide uppercase leading-snug group-hover:text-[#EAA500] transition-colors">
-                      {evt.title}
-                    </h3>
-                    
-                    <p className="text-xs text-slate-200 font-medium tracking-wide">
-                      {evt.category}
-                    </p>
-
-                    <div className="pt-1 flex flex-col gap-1 text-xs font-semibold text-slate-200">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-[#EAA500] shrink-0" />
-                        <span>{evt.date}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-[#EAA500] shrink-0" />
-                        <span>{evt.location}</span>
-                      </div>
-                    </div>
-
-                    {/* Live Ticking Countdown directly inside post card */}
-                    {isTargetEvent && <CompactCardCountdown />}
-                  </div>
-                </Link>
-              );
-            })}
+        {displayEvents.length === 0 ? (
+          <div className="text-center py-12 px-6 bg-white rounded-2xl border border-slate-200 shadow-sm max-w-md mx-auto space-y-2">
+            <Calendar className="w-8 h-8 text-[#EAA500] mx-auto opacity-80" />
+            <p className="text-sm font-bold text-slate-800 uppercase tracking-wider">No Upcoming Events Scheduled</p>
+            <p className="text-xs text-slate-500">Check back soon for new international trade exhibitions and expos hosted in Bhutan.</p>
           </div>
+        ) : (
+          <>
+            {/* MOBILE VIEW (< 768px): Horizontal Swipeable Card Carousel */}
+            <div className="md:hidden mb-8">
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 px-1 -mx-1 scrollbar-none">
+                {displayEvents.map((evt) => {
+                  const isTargetEvent = evt.id === "himalayan-food-trade-innovation-expo-2026" || evt.date.includes("2026");
+                  return (
+                    <Link
+                      key={evt.id}
+                      href={`/events/${evt.id}?from=${from}`}
+                      className="snap-start shrink-0 w-[85%] max-w-[320px] group relative rounded-xl overflow-hidden shadow-md border border-slate-200/80 bg-[#03142A] min-h-[380px] flex flex-col justify-end transition-all cursor-pointer active:scale-98"
+                    >
+                      {/* Background Image with Dark Gradient Overlay */}
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                        style={{ backgroundImage: `url('${evt.image}')` }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/85 to-transparent" />
 
-          <div className="flex items-center justify-center gap-1.5 mt-1 text-[11px] font-bold text-[#EAA500] uppercase tracking-widest">
-            <span>Swipe for more</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#EAA500]" />
-          </div>
-        </div>
+                      {/* Event Info Content */}
+                      <div className="relative p-5 space-y-2 z-10 text-left">
+                        <h3 className="text-lg font-black text-white tracking-wide uppercase leading-snug group-hover:text-[#EAA500] transition-colors">
+                          {evt.title}
+                        </h3>
+                        
+                        <p className="text-xs text-slate-200 font-medium tracking-wide">
+                          {evt.category}
+                        </p>
 
-        {/* DESKTOP VIEW (>= 768px): Up to 4 Cards in 2-Column Grid */}
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-10">
-          {displayEvents.map((evt) => {
-            const isTargetEvent = evt.id === "himalayan-food-trade-innovation-expo-2026" || evt.date.includes("2026");
-            return (
-              <Link
-                key={evt.id}
-                href={`/events/${evt.id}?from=${from}`}
-                className="group relative rounded-xl overflow-hidden shadow-md border border-slate-200/80 bg-[#03142A] min-h-[380px] sm:min-h-[420px] flex flex-col justify-end transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-              >
-                {/* Background Image with Dark Gradient Overlay */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                  style={{ backgroundImage: `url('${evt.image}')` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/85 to-transparent" />
+                        <div className="pt-1 flex flex-col gap-1 text-xs font-semibold text-slate-200">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-3.5 h-3.5 text-[#EAA500] shrink-0" />
+                            <span>{evt.date}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-[#EAA500] shrink-0" />
+                            <span>{evt.location}</span>
+                          </div>
+                        </div>
 
-                {/* Event Info Content */}
-                <div className="relative p-6 sm:p-7 space-y-2.5 z-10 text-left">
-                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase leading-tight group-hover:text-[#EAA500] transition-colors">
-                    {evt.title}
-                  </h3>
-                  
-                  <p className="text-xs sm:text-sm text-slate-200 font-medium tracking-wide">
-                    {evt.category}
-                  </p>
+                        {/* Live Ticking Countdown directly inside post card */}
+                        {isTargetEvent && <CompactCardCountdown />}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
 
-                  <div className="pt-1 flex flex-col sm:flex-row gap-3 sm:gap-6 text-xs sm:text-sm font-semibold text-slate-200">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-white shrink-0" />
-                      <span>{evt.date}</span>
+              <div className="flex items-center justify-center gap-1.5 mt-1 text-[11px] font-bold text-[#EAA500] uppercase tracking-widest">
+                <span>Swipe for more</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#EAA500]" />
+              </div>
+            </div>
+
+            {/* DESKTOP VIEW (>= 768px): Up to 4 Cards in 2-Column Grid */}
+            <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-10">
+              {displayEvents.map((evt) => {
+                const isTargetEvent = evt.id === "himalayan-food-trade-innovation-expo-2026" || evt.date.includes("2026");
+                return (
+                  <Link
+                    key={evt.id}
+                    href={`/events/${evt.id}?from=${from}`}
+                    className="group relative rounded-xl overflow-hidden shadow-md border border-slate-200/80 bg-[#03142A] min-h-[380px] sm:min-h-[420px] flex flex-col justify-end transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                  >
+                    {/* Background Image with Dark Gradient Overlay */}
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                      style={{ backgroundImage: `url('${evt.image}')` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/85 to-transparent" />
+
+                    {/* Event Info Content */}
+                    <div className="relative p-6 sm:p-7 space-y-2.5 z-10 text-left">
+                      <h3 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase leading-tight group-hover:text-[#EAA500] transition-colors">
+                        {evt.title}
+                      </h3>
+                      
+                      <p className="text-xs sm:text-sm text-slate-200 font-medium tracking-wide">
+                        {evt.category}
+                      </p>
+
+                      <div className="pt-1 flex flex-col sm:flex-row gap-3 sm:gap-6 text-xs sm:text-sm font-semibold text-slate-200">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-white shrink-0" />
+                          <span>{evt.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-white shrink-0" />
+                          <span>{evt.location}</span>
+                        </div>
+                      </div>
+
+                      {/* Live Ticking Countdown directly inside post card */}
+                      {isTargetEvent && <CompactCardCountdown />}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-white shrink-0" />
-                      <span>{evt.location}</span>
-                    </div>
-                  </div>
-
-                  {/* Live Ticking Countdown directly inside post card */}
-                  {isTargetEvent && <CompactCardCountdown />}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* View All Events Button */}
         <div className="text-center pb-6 sm:pb-8">
