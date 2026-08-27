@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,11 +22,11 @@ export const metadata: Metadata = {
   description: "Connecting global businesses, investors, innovators, and communities through world-class exhibitions and events in Bhutan.",
   icons: {
     icon: [
-      { url: "/logo.jpeg", type: "image/jpeg" },
+      { url: "/icon.png", type: "image/png" },
     ],
-    shortcut: ["/logo.jpeg"],
+    shortcut: ["/icon.png"],
     apple: [
-      { url: "/logo.jpeg" },
+      { url: "/icon.png" },
     ],
   },
   verification: {
@@ -44,29 +45,34 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <link rel="icon" href="/logo.jpeg" type="image/jpeg" />
-        <link rel="shortcut icon" href="/logo.jpeg" type="image/jpeg" />
-        <link rel="apple-touch-icon" href="/logo.jpeg" />
+        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="shortcut icon" href="/icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icon.png" />
         <meta name="google-site-verification" content="QLeGh1kl2PRDF97EFo0fZPprznesEjHV7Cm88oAnG44" />
         <meta name="google-site-verification" content="TirE6t0RVKEmMHM-xUkBXl031MGIZeYx_MsZxXJKkr4" />
-        {/* Google tag (gtag.js) */}
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${gaId}');
-            `,
-          }}
-        />
       </head>
       <body className="min-h-full flex flex-col">
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
         <ScrollToTop />
         {children}
       </body>
     </html>
   );
 }
+
 
