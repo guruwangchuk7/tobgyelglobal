@@ -1233,147 +1233,150 @@ export default function AdminPage() {
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                              Event Category *
-                            </label>
+                        {/* Event Category */}
+                        <div>
+                          <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                            Event Category *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Trade • Technology • Tourism"
+                            value={editingEvent.category || ""}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, category: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
+
+                        {/* Dates / Duration with Calendar Pickers */}
+                        <div>
+                          <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                            Dates / Duration *
+                          </label>
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">Start Date</span>
+                                <input
+                                  type="date"
+                                  onChange={(e) => {
+                                    const startVal = e.target.value;
+                                    const endVal = (document.getElementById("event-end-date") as HTMLInputElement)?.value;
+                                    if (startVal) {
+                                      const formatDateRange = (s: string, en: string) => {
+                                        const startDate = new Date(s);
+                                        if (isNaN(startDate.getTime())) return s;
+                                        const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                        if (!en) return startFormatted;
+                                        const endDate = new Date(en);
+                                        if (isNaN(endDate.getTime())) return startFormatted;
+                                        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                        if (startDate.getFullYear() === endDate.getFullYear()) {
+                                          if (startDate.getMonth() === endDate.getMonth()) {
+                                            const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
+                                            return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                          }
+                                          const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                          const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                          return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                        }
+                                        const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                        return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
+                                      };
+                                      setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
+                                      setIsDirty(true);
+                                    }
+                                  }}
+                                  id="event-start-date"
+                                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">End Date</span>
+                                <input
+                                  type="date"
+                                  onChange={(e) => {
+                                    const startVal = (document.getElementById("event-start-date") as HTMLInputElement)?.value;
+                                    const endVal = e.target.value;
+                                    if (startVal || endVal) {
+                                      const formatDateRange = (s: string, en: string) => {
+                                        const startDate = new Date(s);
+                                        if (isNaN(startDate.getTime())) return s;
+                                        const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                        if (!en) return startFormatted;
+                                        const endDate = new Date(en);
+                                        if (isNaN(endDate.getTime())) return startFormatted;
+                                        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                        if (startDate.getFullYear() === endDate.getFullYear()) {
+                                          if (startDate.getMonth() === endDate.getMonth()) {
+                                            const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
+                                            return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                          }
+                                          const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                          const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                          return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                        }
+                                        const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                        return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
+                                      };
+                                      setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
+                                      setIsDirty(true);
+                                    }
+                                  }}
+                                  id="event-end-date"
+                                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                                />
+                              </div>
+                            </div>
                             <input
                               type="text"
-                              value={editingEvent.category || ""}
+                              placeholder="e.g. Dec 30, 2026 – Jan 3, 2027 (5 Days)"
+                              value={editingEvent.date || ""}
                               onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, category: e.target.value });
+                                setEditingEvent({ ...editingEvent, date: e.target.value });
                                 setIsDirty(true);
                               }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
                             />
-                          </div>
-
-                          <div>
-                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                              Dates / Duration *
-                            </label>
-                            <div className="space-y-2">
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">Start Date</span>
-                                  <input
-                                    type="date"
-                                    onChange={(e) => {
-                                      const startVal = e.target.value;
-                                      const endVal = (document.getElementById("event-end-date") as HTMLInputElement)?.value;
-                                      if (startVal) {
-                                        const formatDateRange = (s: string, en: string) => {
-                                          const startDate = new Date(s);
-                                          if (isNaN(startDate.getTime())) return s;
-                                          const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                          if (!en) return startFormatted;
-                                          const endDate = new Date(en);
-                                          if (isNaN(endDate.getTime())) return startFormatted;
-                                          const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-                                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                                          if (startDate.getFullYear() === endDate.getFullYear()) {
-                                            if (startDate.getMonth() === endDate.getMonth()) {
-                                              const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
-                                              return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                            }
-                                            const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                            const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                            return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                          }
-                                          const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                          return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
-                                        };
-                                        setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
-                                        setIsDirty(true);
-                                      }
-                                    }}
-                                    id="event-start-date"
-                                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                                  />
-                                </div>
-                                <div>
-                                  <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">End Date</span>
-                                  <input
-                                    type="date"
-                                    onChange={(e) => {
-                                      const startVal = (document.getElementById("event-start-date") as HTMLInputElement)?.value;
-                                      const endVal = e.target.value;
-                                      if (startVal || endVal) {
-                                        const formatDateRange = (s: string, en: string) => {
-                                          const startDate = new Date(s);
-                                          if (isNaN(startDate.getTime())) return s;
-                                          const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                          if (!en) return startFormatted;
-                                          const endDate = new Date(en);
-                                          if (isNaN(endDate.getTime())) return startFormatted;
-                                          const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-                                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                                          if (startDate.getFullYear() === endDate.getFullYear()) {
-                                            if (startDate.getMonth() === endDate.getMonth()) {
-                                              const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
-                                              return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                            }
-                                            const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                            const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                            return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                          }
-                                          const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                          return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
-                                        };
-                                        setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
-                                        setIsDirty(true);
-                                      }
-                                    }}
-                                    id="event-end-date"
-                                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                                  />
-                                </div>
-                              </div>
-                              <input
-                                type="text"
-                                placeholder="e.g. Dec 30, 2026 – Jan 3, 2027 (5 Days)"
-                                value={editingEvent.date || ""}
-                                onChange={(e) => {
-                                  setEditingEvent({ ...editingEvent, date: e.target.value });
-                                  setIsDirty(true);
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                              />
-                            </div>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                              Location (City, Country)
-                            </label>
-                            <input
-                              type="text"
-                              value={editingEvent.location || ""}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, location: e.target.value });
-                                setIsDirty(true);
-                              }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                            />
-                          </div>
+                        {/* Location City / Country */}
+                        <div>
+                          <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                            Location (City, Country)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Phuentsholing, Bhutan"
+                            value={editingEvent.location || ""}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, location: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
+                        </div>
 
-                          <div>
-                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                              Expo Venue
-                            </label>
-                            <input
-                              type="text"
-                              value={editingEvent.venue || ""}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, venue: e.target.value });
-                                setIsDirty(true);
-                              }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                            />
-                          </div>
+                        {/* Expo Venue */}
+                        <div>
+                          <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                            Expo Venue
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Phuentsholing International Expo Pavilion"
+                            value={editingEvent.venue || ""}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, venue: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                          />
                         </div>
 
                         {/* Visual Drag & Drop Image Upload Dropzone */}
