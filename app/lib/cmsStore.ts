@@ -438,33 +438,63 @@ export const INITIAL_REGULATIONS: RegulationsCMS = {
 
 // CRUD Helper Functions for ALL Modules (A - Z)
 
+const DELETED_KEYS = {
+  EVENTS: "tobgyel_cms_deleted_events",
+  NEWS: "tobgyel_cms_deleted_news",
+  ADS: "tobgyel_cms_deleted_ads",
+};
+
+export const getDeletedIds = (key: string): string[] => {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem(key);
+  return stored ? JSON.parse(stored) : [];
+};
+
+export const markIdAsDeleted = (key: string, id: string) => {
+  if (typeof window === "undefined") return;
+  const deleted = getDeletedIds(key);
+  if (!deleted.includes(id)) {
+    deleted.push(id);
+    localStorage.setItem(key, JSON.stringify(deleted));
+  }
+};
+
+export const unmarkIdAsDeleted = (key: string, id: string) => {
+  if (typeof window === "undefined") return;
+  const deleted = getDeletedIds(key);
+  const updated = deleted.filter((d) => d !== id);
+  localStorage.setItem(key, JSON.stringify(updated));
+};
+
 export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
+  const deletedIds = getDeletedIds(DELETED_KEYS.EVENTS);
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase.from("cms_events").select("*").order("updated_at", { ascending: false });
-      if (!error && data && data.length > 0) {
-        const fetched: TradeEventCMS[] = data.map((d: any) => ({
-          id: d.id,
-          slug: d.slug,
-          title: d.title,
-          category: d.category,
-          date: d.date,
-          location: d.location,
-          venue: d.venue,
-          image: d.image,
-          description: d.description || "",
-          highlights: Array.isArray(d.highlights) ? d.highlights : [],
-          sectors: Array.isArray(d.sectors) ? d.sectors : [],
-          status: d.status || "Published",
-          featuredOnHome: d.featured_on_home !== false,
-          updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
-        }));
-        const missingInitial = INITIAL_EVENTS.filter((ie) => !fetched.some((e) => e.id === ie.id || e.slug === ie.slug));
-        const merged = [...fetched, ...missingInitial];
+      if (!error && data) {
+        const fetched: TradeEventCMS[] = data
+          .map((d: any) => ({
+            id: d.id,
+            slug: d.slug,
+            title: d.title,
+            category: d.category,
+            date: d.date,
+            location: d.location,
+            venue: d.venue,
+            image: d.image,
+            description: d.description || "",
+            highlights: Array.isArray(d.highlights) ? d.highlights : [],
+            sectors: Array.isArray(d.sectors) ? d.sectors : [],
+            status: d.status || "Published",
+            featuredOnHome: d.featured_on_home !== false,
+            updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
+          }))
+          .filter((e) => !deletedIds.includes(e.id) && !deletedIds.includes(e.slug));
+
         if (typeof window !== "undefined") {
-          localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(merged));
+          localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(fetched));
         }
-        return merged;
+        return fetched;
       }
     } catch (err) {
       console.error("Error fetching CMS events from Supabase:", err);
@@ -475,18 +505,28 @@ export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
 
 export const getCMSEvents = (): TradeEventCMS[] => {
   if (typeof window === "undefined") return INITIAL_EVENTS;
+  const deletedIds = getDeletedIds(DELETED_KEYS.EVENTS);
   const stored = localStorage.getItem(CMS_KEYS.EVENTS);
+
+  let parsed: TradeEventCMS[];
   if (!stored) {
-    localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
-    return INITIAL_EVENTS;
+    parsed = INITIAL_EVENTS;
+  } else {
+    parsed = JSON.parse(stored);
   }
-  const parsed: TradeEventCMS[] = JSON.parse(stored);
-  const missingInitial = INITIAL_EVENTS.filter((ie) => !parsed.some((e) => e.id === ie.id || e.slug === ie.slug));
-  if (missingInitial.length > 0) {
-    const merged = [...missingInitial, ...parsed];
-    localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(merged));
-    return merged;
+
+  parsed = parsed.filter((e) => !deletedIds.includes(e.id) && !deletedIds.includes(e.slug));
+
+  if (!stored) {
+    const missingInitial = INITIAL_EVENTS.filter(
+      (ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug) && !parsed.some((e) => e.id === ie.id || e.slug === ie.slug)
+    );
+    if (missingInitial.length > 0) {
+      parsed = [...parsed, ...missingInitial];
+    }
+    localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(parsed));
   }
+
   return parsed;
 };
 
@@ -496,13 +536,16 @@ export const getCMSEventById = (id: string): TradeEventCMS | undefined => {
 };
 
 export const saveCMSEvent = (event: TradeEventCMS): TradeEventCMS => {
+  if (event.id) unmarkIdAsDeleted(DELETED_KEYS.EVENTS, event.id);
+  if (event.slug) unmarkIdAsDeleted(DELETED_KEYS.EVENTS, event.slug);
+
   const events = getCMSEvents();
-  const index = events.findIndex((e) => e.id === event.id);
+  const index = events.findIndex((e) => e.id === event.id || (e.slug && e.slug === event.slug));
   let updated: TradeEventCMS[];
   if (index >= 0) {
-    updated = events.map((e) => (e.id === event.id ? { ...event, updatedAt: new Date().toLocaleDateString() } : e));
+    updated = events.map((e, i) => (i === index ? { ...event, updatedAt: new Date().toLocaleDateString() } : e));
   } else {
-    updated = [{ ...event, id: `evt-${Date.now()}`, updatedAt: new Date().toLocaleDateString() }, ...events];
+    updated = [{ ...event, id: event.id || `evt-${Date.now()}`, updatedAt: new Date().toLocaleDateString() }, ...events];
   }
   localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(updated));
 
@@ -535,42 +578,54 @@ export const saveCMSEvent = (event: TradeEventCMS): TradeEventCMS => {
 };
 
 export const deleteCMSEvent = (id: string) => {
+  markIdAsDeleted(DELETED_KEYS.EVENTS, id);
+
   const events = getCMSEvents();
-  const updated = events.filter((e) => e.id !== id);
+  const target = events.find((e) => e.id === id || e.slug === id);
+  if (target?.slug) markIdAsDeleted(DELETED_KEYS.EVENTS, target.slug);
+  if (target?.id) markIdAsDeleted(DELETED_KEYS.EVENTS, target.id);
+
+  const updated = events.filter((e) => e.id !== id && e.slug !== id);
   localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(updated));
 
   if (isSupabaseConfigured()) {
-    supabase.from("cms_events").delete().eq("id", id).then(({ error }) => {
-      if (error) console.error("Error deleting CMS event from Supabase:", error);
-    });
+    supabase
+      .from("cms_events")
+      .delete()
+      .or(`id.eq.${id},slug.eq.${id}`)
+      .then(({ error }) => {
+        if (error) console.error("Error deleting CMS event from Supabase:", error);
+      });
   }
 };
 
 export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
+  const deletedIds = getDeletedIds(DELETED_KEYS.NEWS);
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase.from("cms_news").select("*").order("updated_at", { ascending: false });
-      if (!error && data && data.length > 0) {
-        const fetched: NewsArticleCMS[] = data.map((d: any) => ({
-          id: d.id,
-          slug: d.slug,
-          title: d.title,
-          date: d.date,
-          category: d.category,
-          image: d.image,
-          excerpt: d.excerpt,
-          content: Array.isArray(d.content) ? d.content : [d.excerpt],
-          mediaContactEmail: d.media_contact_email || "info@tobgyelglobalxpos.com",
-          status: d.status || "Published",
-          featuredOnHome: d.featured_on_home !== false,
-          updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
-        }));
-        const missingInitial = INITIAL_NEWS.filter((ie) => !fetched.some((n) => n.id === ie.id || n.slug === ie.slug));
-        const merged = [...fetched, ...missingInitial];
+      if (!error && data) {
+        const fetched: NewsArticleCMS[] = data
+          .map((d: any) => ({
+            id: d.id,
+            slug: d.slug,
+            title: d.title,
+            date: d.date,
+            category: d.category,
+            image: d.image,
+            excerpt: d.excerpt,
+            content: Array.isArray(d.content) ? d.content : [d.excerpt],
+            mediaContactEmail: d.media_contact_email || "info@tobgyelglobalxpos.com",
+            status: d.status || "Published",
+            featuredOnHome: d.featured_on_home !== false,
+            updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
+          }))
+          .filter((n) => !deletedIds.includes(n.id) && !deletedIds.includes(n.slug));
+
         if (typeof window !== "undefined") {
-          localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(merged));
+          localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(fetched));
         }
-        return merged;
+        return fetched;
       }
     } catch (err) {
       console.error("Error fetching CMS news from Supabase:", err);
@@ -581,12 +636,29 @@ export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
 
 export const getCMSNews = (): NewsArticleCMS[] => {
   if (typeof window === "undefined") return INITIAL_NEWS;
+  const deletedIds = getDeletedIds(DELETED_KEYS.NEWS);
   const stored = localStorage.getItem(CMS_KEYS.NEWS);
+
+  let parsed: NewsArticleCMS[];
   if (!stored) {
-    localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(INITIAL_NEWS));
-    return INITIAL_NEWS;
+    parsed = INITIAL_NEWS;
+  } else {
+    parsed = JSON.parse(stored);
   }
-  return JSON.parse(stored);
+
+  parsed = parsed.filter((n) => !deletedIds.includes(n.id) && !deletedIds.includes(n.slug));
+
+  if (!stored) {
+    const missingInitial = INITIAL_NEWS.filter(
+      (ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug) && !parsed.some((n) => n.id === ie.id || n.slug === ie.slug)
+    );
+    if (missingInitial.length > 0) {
+      parsed = [...parsed, ...missingInitial];
+    }
+    localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(parsed));
+  }
+
+  return parsed;
 };
 
 export const getCMSNewsById = (id: string): NewsArticleCMS | undefined => {
@@ -595,13 +667,16 @@ export const getCMSNewsById = (id: string): NewsArticleCMS | undefined => {
 };
 
 export const saveCMSNews = (article: NewsArticleCMS): NewsArticleCMS => {
+  if (article.id) unmarkIdAsDeleted(DELETED_KEYS.NEWS, article.id);
+  if (article.slug) unmarkIdAsDeleted(DELETED_KEYS.NEWS, article.slug);
+
   const articles = getCMSNews();
-  const index = articles.findIndex((n) => n.id === article.id);
+  const index = articles.findIndex((n) => n.id === article.id || (n.slug && n.slug === article.slug));
   let updated: NewsArticleCMS[];
   if (index >= 0) {
-    updated = articles.map((n) => (n.id === article.id ? { ...article, updatedAt: new Date().toLocaleDateString() } : n));
+    updated = articles.map((n, i) => (i === index ? { ...article, updatedAt: new Date().toLocaleDateString() } : n));
   } else {
-    updated = [{ ...article, id: `news-${Date.now()}`, updatedAt: new Date().toLocaleDateString() }, ...articles];
+    updated = [{ ...article, id: article.id || `news-${Date.now()}`, updatedAt: new Date().toLocaleDateString() }, ...articles];
   }
   localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(updated));
 
@@ -629,14 +704,24 @@ export const saveCMSNews = (article: NewsArticleCMS): NewsArticleCMS => {
 };
 
 export const deleteCMSNews = (id: string) => {
+  markIdAsDeleted(DELETED_KEYS.NEWS, id);
+
   const articles = getCMSNews();
-  const updated = articles.filter((n) => n.id !== id);
+  const target = articles.find((n) => n.id === id || n.slug === id);
+  if (target?.slug) markIdAsDeleted(DELETED_KEYS.NEWS, target.slug);
+  if (target?.id) markIdAsDeleted(DELETED_KEYS.NEWS, target.id);
+
+  const updated = articles.filter((n) => n.id !== id && n.slug !== id);
   localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(updated));
 
   if (isSupabaseConfigured()) {
-    supabase.from("cms_news").delete().eq("id", id).then(({ error }) => {
-      if (error) console.error("Error deleting CMS news from Supabase:", error);
-    });
+    supabase
+      .from("cms_news")
+      .delete()
+      .or(`id.eq.${id},slug.eq.${id}`)
+      .then(({ error }) => {
+        if (error) console.error("Error deleting CMS news from Supabase:", error);
+      });
   }
 };
 
@@ -749,35 +834,49 @@ export const incrementPageViewCount = (): number => {
 
 export const getCMSProductAds = (): ProductAdCMS[] => {
   if (typeof window === "undefined") return INITIAL_PRODUCT_ADS;
+  const deletedIds = getDeletedIds(DELETED_KEYS.ADS);
   const stored = localStorage.getItem(CMS_KEYS.PRODUCT_ADS);
+
+  let parsed: ProductAdCMS[];
   if (!stored) {
-    localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(INITIAL_PRODUCT_ADS));
-    return INITIAL_PRODUCT_ADS;
+    parsed = INITIAL_PRODUCT_ADS;
+  } else {
+    parsed = JSON.parse(stored);
   }
-  const parsed: ProductAdCMS[] = JSON.parse(stored);
-  const missingInitial = INITIAL_PRODUCT_ADS.filter((ia) => !parsed.some((a) => a.id === ia.id));
-  if (missingInitial.length > 0) {
-    const merged = [...parsed, ...missingInitial];
-    localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(merged));
-    return merged;
+
+  parsed = parsed.filter((a) => !deletedIds.includes(a.id));
+
+  if (!stored) {
+    const missingInitial = INITIAL_PRODUCT_ADS.filter(
+      (ia) => !deletedIds.includes(ia.id) && !parsed.some((a) => a.id === ia.id)
+    );
+    if (missingInitial.length > 0) {
+      parsed = [...parsed, ...missingInitial];
+    }
+    localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(parsed));
   }
+
   return parsed;
 };
 
 export const saveCMSProductAd = (ad: ProductAdCMS): ProductAdCMS => {
+  if (ad.id) unmarkIdAsDeleted(DELETED_KEYS.ADS, ad.id);
+
   const ads = getCMSProductAds();
   const index = ads.findIndex((a) => a.id === ad.id);
   let updated: ProductAdCMS[];
   if (index >= 0) {
-    updated = ads.map((a) => (a.id === ad.id ? ad : a));
+    updated = ads.map((a, i) => (i === index ? ad : a));
   } else {
-    updated = [{ ...ad, id: `ad-${Date.now()}` }, ...ads];
+    updated = [{ ...ad, id: ad.id || `ad-${Date.now()}` }, ...ads];
   }
   localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(updated));
   return ad;
 };
 
 export const deleteCMSProductAd = (id: string) => {
+  markIdAsDeleted(DELETED_KEYS.ADS, id);
+
   const ads = getCMSProductAds();
   const updated = ads.filter((a) => a.id !== id);
   localStorage.setItem(CMS_KEYS.PRODUCT_ADS, JSON.stringify(updated));
