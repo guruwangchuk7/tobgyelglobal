@@ -1209,323 +1209,40 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Progressive Disclosure Tabs */}
-                      <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3">
-                        {(["details", "seo", "settings"] as const).map((tab) => (
-                          <button
-                            key={tab}
-                            onClick={() => setEditorTab(tab)}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all ${editorTab === tab
-                                ? "bg-slate-800 text-[#EAA500] border border-slate-700"
-                                : "text-slate-400 hover:text-white"
-                              }`}
-                          >
-                            {tab}
-                          </button>
-                        ))}
-                      </div>
-
-                      {editorTab === "details" && (
-                        <div className="space-y-5 text-xs">
-                          {/* Title with Character Counter */}
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <label className="font-extrabold uppercase tracking-wider text-slate-300">
-                                Event Title *
-                              </label>
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {(editingEvent.title || "").length} / 80
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              required
-                              placeholder="e.g. BIN Trade Showcase 2027"
-                              value={editingEvent.title || ""}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, title: e.target.value });
-                                setIsDirty(true);
-                              }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                                Event Category *
-                              </label>
-                              <input
-                                type="text"
-                                value={editingEvent.category || ""}
-                                onChange={(e) => {
-                                  setEditingEvent({ ...editingEvent, category: e.target.value });
-                                  setIsDirty(true);
-                                }}
-                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                                Dates / Duration *
-                              </label>
-                              <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">Start Date</span>
-                                    <input
-                                      type="date"
-                                      onChange={(e) => {
-                                        const startVal = e.target.value;
-                                        const endVal = (document.getElementById("event-end-date") as HTMLInputElement)?.value;
-                                        if (startVal) {
-                                          const formatDateRange = (s: string, en: string) => {
-                                            const startDate = new Date(s);
-                                            if (isNaN(startDate.getTime())) return s;
-                                            const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                            if (!en) return startFormatted;
-                                            const endDate = new Date(en);
-                                            if (isNaN(endDate.getTime())) return startFormatted;
-                                            const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                                            if (startDate.getFullYear() === endDate.getFullYear()) {
-                                              if (startDate.getMonth() === endDate.getMonth()) {
-                                                const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
-                                                return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                              }
-                                              const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                              const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                              return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                            }
-                                            const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                            return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
-                                          };
-                                          setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
-                                          setIsDirty(true);
-                                        }
-                                      }}
-                                      id="event-start-date"
-                                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                                    />
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">End Date</span>
-                                    <input
-                                      type="date"
-                                      onChange={(e) => {
-                                        const startVal = (document.getElementById("event-start-date") as HTMLInputElement)?.value;
-                                        const endVal = e.target.value;
-                                        if (startVal || endVal) {
-                                          const formatDateRange = (s: string, en: string) => {
-                                            const startDate = new Date(s);
-                                            if (isNaN(startDate.getTime())) return s;
-                                            const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                            if (!en) return startFormatted;
-                                            const endDate = new Date(en);
-                                            if (isNaN(endDate.getTime())) return startFormatted;
-                                            const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                                            if (startDate.getFullYear() === endDate.getFullYear()) {
-                                              if (startDate.getMonth() === endDate.getMonth()) {
-                                                const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
-                                                return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                              }
-                                              const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                              const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                              return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
-                                            }
-                                            const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-                                            return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
-                                          };
-                                          setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
-                                          setIsDirty(true);
-                                        }
-                                      }}
-                                      id="event-end-date"
-                                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                                    />
-                                  </div>
-                                </div>
-                                <input
-                                  type="text"
-                                  placeholder="e.g. Dec 30, 2026 – Jan 3, 2027 (5 Days)"
-                                  value={editingEvent.date || ""}
-                                  onChange={(e) => {
-                                    setEditingEvent({ ...editingEvent, date: e.target.value });
-                                    setIsDirty(true);
-                                  }}
-                                  className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                                Location (City, Country)
-                              </label>
-                              <input
-                                type="text"
-                                value={editingEvent.location || ""}
-                                onChange={(e) => {
-                                  setEditingEvent({ ...editingEvent, location: e.target.value });
-                                  setIsDirty(true);
-                                }}
-                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
-                                Expo Venue
-                              </label>
-                              <input
-                                type="text"
-                                value={editingEvent.venue || ""}
-                                onChange={(e) => {
-                                  setEditingEvent({ ...editingEvent, venue: e.target.value });
-                                  setIsDirty(true);
-                                }}
-                                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Visual Drag & Drop Image Upload Dropzone */}
-                          <div>
-                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
-                              Cover Image Banner
+                      <div className="space-y-5 text-xs">
+                        {/* Title with Character Counter */}
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                              Event Title *
                             </label>
-                            <div className="space-y-3">
-                              {editingEvent.image ? (
-                                <div className="relative h-44 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 group">
-                                  <img
-                                    src={editingEvent.image}
-                                    alt="Cover Preview"
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                    <label htmlFor="cover-file-event" className="px-4 py-2 rounded-lg bg-[#EAA500] hover:bg-[#d49400] text-slate-950 font-black text-xs cursor-pointer shadow-md flex items-center gap-1.5 transition">
-                                      <UploadCloud className="w-4 h-4" /> Replace Image
-                                    </label>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setEditingEvent({ ...editingEvent, image: "" });
-                                        setIsDirty(true);
-                                      }}
-                                      className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition"
-                                    >
-                                      Remove
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div
-                                  onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                  }}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                                      const file = e.dataTransfer.files[0];
-                                      const reader = new FileReader();
-                                      reader.onload = (ev) => {
-                                        if (ev.target?.result) {
-                                          setEditingEvent({ ...editingEvent, image: ev.target.result as string });
-                                          setIsDirty(true);
-                                        }
-                                      };
-                                      reader.readAsDataURL(file);
-                                    }
-                                  }}
-                                  className="border-2 border-dashed border-slate-700 hover:border-[#EAA500] rounded-xl p-6 text-center bg-slate-900/60 hover:bg-slate-900 transition cursor-pointer group"
-                                >
-                                  <label htmlFor="cover-file-event" className="cursor-pointer flex flex-col items-center justify-center space-y-2">
-                                    <div className="w-12 h-12 rounded-full bg-slate-800 group-hover:bg-[#EAA500]/20 text-slate-400 group-hover:text-[#EAA500] flex items-center justify-center transition">
-                                      <UploadCloud className="w-6 h-6" />
-                                    </div>
-                                    <span className="text-xs font-bold text-white group-hover:text-[#EAA500] transition">
-                                      Upload Photo or Drag &amp; Drop Image
-                                    </span>
-                                    <span className="text-[10px] text-slate-400">
-                                      Supports PNG, JPG, WEBP, GIF (Max 5MB)
-                                    </span>
-                                  </label>
-                                </div>
-                              )}
-
-                              <input
-                                type="file"
-                                id="cover-file-event"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  if (e.target.files && e.target.files[0]) {
-                                    const reader = new FileReader();
-                                    reader.onload = (ev) => {
-                                      if (ev.target?.result) {
-                                        setEditingEvent({ ...editingEvent, image: ev.target.result as string });
-                                        setIsDirty(true);
-                                      }
-                                    };
-                                    reader.readAsDataURL(e.target.files[0]);
-                                  }
-                                }}
-                              />
-
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] uppercase font-bold text-slate-500">Or Paste URL:</span>
-                                <input
-                                  type="text"
-                                  placeholder="https://..."
-                                  value={editingEvent.image || ""}
-                                  onChange={(e) => {
-                                    setEditingEvent({ ...editingEvent, image: e.target.value });
-                                    setIsDirty(true);
-                                  }}
-                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                                />
-                              </div>
-                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {(editingEvent.title || "").length} / 80
+                            </span>
                           </div>
-
-                          {/* Description */}
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <label className="font-extrabold uppercase tracking-wider text-slate-300">
-                                Event Description
-                              </label>
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {(editingEvent.description || "").length} / 500
-                              </span>
-                            </div>
-                            <textarea
-                              rows={4}
-                              value={editingEvent.description || ""}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, description: e.target.value });
-                                setIsDirty(true);
-                              }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. BIN Trade Showcase 2027"
+                            value={editingEvent.title || ""}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, title: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-[#EAA500]"
+                          />
                         </div>
-                      )}
 
-                      {editorTab === "seo" && (
-                        <div className="space-y-4 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block font-extrabold uppercase text-slate-300 mb-1">SEO Title</label>
+                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                              Event Category *
+                            </label>
                             <input
                               type="text"
-                              value={editingEvent.title || ""}
+                              value={editingEvent.category || ""}
                               onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, title: e.target.value });
+                                setEditingEvent({ ...editingEvent, category: e.target.value });
                                 setIsDirty(true);
                               }}
                               className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
@@ -1533,65 +1250,291 @@ export default function AdminPage() {
                           </div>
 
                           <div>
-                            <label className="block font-extrabold uppercase text-slate-300 mb-1">Meta Description</label>
-                            <textarea
-                              rows={3}
-                              value={editingEvent.description || ""}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, description: e.target.value });
-                                setIsDirty(true);
-                              }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
-                            />
-                          </div>
-
-                          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-[#EAA500]">Search Snippet Preview</span>
-                            <h4 className="text-sm font-bold text-blue-400 hover:underline cursor-pointer">{editingEvent.title} | Tobgyel Global Expos</h4>
-                            <p className="text-[11px] text-emerald-400">https://tobgyelglobalexpos.com/events/{editingEvent.slug}</p>
-                            <p className="text-xs text-slate-300 line-clamp-2">{editingEvent.description}</p>
+                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                              Dates / Duration *
+                            </label>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">Start Date</span>
+                                  <input
+                                    type="date"
+                                    onChange={(e) => {
+                                      const startVal = e.target.value;
+                                      const endVal = (document.getElementById("event-end-date") as HTMLInputElement)?.value;
+                                      if (startVal) {
+                                        const formatDateRange = (s: string, en: string) => {
+                                          const startDate = new Date(s);
+                                          if (isNaN(startDate.getTime())) return s;
+                                          const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                          if (!en) return startFormatted;
+                                          const endDate = new Date(en);
+                                          if (isNaN(endDate.getTime())) return startFormatted;
+                                          const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+                                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                          if (startDate.getFullYear() === endDate.getFullYear()) {
+                                            if (startDate.getMonth() === endDate.getMonth()) {
+                                              const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
+                                              return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                            }
+                                            const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                            const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                            return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                          }
+                                          const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                          return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
+                                        };
+                                        setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
+                                        setIsDirty(true);
+                                      }
+                                    }}
+                                    id="event-start-date"
+                                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 block mb-0.5 font-bold uppercase">End Date</span>
+                                  <input
+                                    type="date"
+                                    onChange={(e) => {
+                                      const startVal = (document.getElementById("event-start-date") as HTMLInputElement)?.value;
+                                      const endVal = e.target.value;
+                                      if (startVal || endVal) {
+                                        const formatDateRange = (s: string, en: string) => {
+                                          const startDate = new Date(s);
+                                          if (isNaN(startDate.getTime())) return s;
+                                          const startFormatted = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                          if (!en) return startFormatted;
+                                          const endDate = new Date(en);
+                                          if (isNaN(endDate.getTime())) return startFormatted;
+                                          const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+                                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                          if (startDate.getFullYear() === endDate.getFullYear()) {
+                                            if (startDate.getMonth() === endDate.getMonth()) {
+                                              const monthStr = startDate.toLocaleDateString("en-US", { month: "short" });
+                                              return `${monthStr} ${startDate.getDate()} – ${endDate.getDate()}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                            }
+                                            const startMonthDay = startDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                            const endMonthDay = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                            return `${startMonthDay} – ${endMonthDay}, ${startDate.getFullYear()} (${diffDays} Days)`;
+                                          }
+                                          const endFormatted = endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                                          return `${startFormatted} – ${endFormatted} (${diffDays} Days)`;
+                                        };
+                                        setEditingEvent({ ...editingEvent, date: formatDateRange(startVal, endVal) });
+                                        setIsDirty(true);
+                                      }
+                                    }}
+                                    id="event-end-date"
+                                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                                  />
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                placeholder="e.g. Dec 30, 2026 – Jan 3, 2027 (5 Days)"
+                                value={editingEvent.date || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, date: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
                           </div>
                         </div>
-                      )}
 
-                      {editorTab === "settings" && (
-                        <div className="space-y-4 text-xs">
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
-                            <div>
-                              <p className="font-bold text-white">Publish Status</p>
-                              <p className="text-[11px] text-slate-400">Make event public on website</p>
-                            </div>
-                            <select
-                              value={editingEvent.status || "Published"}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, status: e.target.value as any });
-                                setIsDirty(true);
-                              }}
-                              className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-white font-bold"
-                            >
-                              <option value="Published">Published</option>
-                              <option value="Draft">Draft</option>
-                              <option value="Archived">Archived</option>
-                            </select>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900 border border-slate-800">
-                            <div>
-                              <p className="font-bold text-white">Feature on Homepage</p>
-                              <p className="text-[11px] text-slate-400">Show in main homepage upcoming events carousel</p>
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                              Location (City, Country)
+                            </label>
                             <input
-                              type="checkbox"
-                              checked={editingEvent.featuredOnHome !== false}
+                              type="text"
+                              value={editingEvent.location || ""}
                               onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, featuredOnHome: e.target.checked });
+                                setEditingEvent({ ...editingEvent, location: e.target.value });
                                 setIsDirty(true);
                               }}
-                              className="w-5 h-5 rounded accent-[#0A4D8C]"
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
+                              Expo Venue
+                            </label>
+                            <input
+                              type="text"
+                              value={editingEvent.venue || ""}
+                              onChange={(e) => {
+                                setEditingEvent({ ...editingEvent, venue: e.target.value });
+                                setIsDirty(true);
+                              }}
+                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
                             />
                           </div>
                         </div>
-                      )}
+
+                        {/* Visual Drag & Drop Image Upload Dropzone */}
+                        <div>
+                          <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
+                            Cover Image Banner
+                          </label>
+                          <div className="space-y-3">
+                            {editingEvent.image ? (
+                              <div className="relative h-44 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 group">
+                                <img
+                                  src={editingEvent.image}
+                                  alt="Cover Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                  <label htmlFor="cover-file-event" className="px-4 py-2 rounded-lg bg-[#EAA500] hover:bg-[#d49400] text-slate-950 font-black text-xs cursor-pointer shadow-md flex items-center gap-1.5 transition">
+                                    <UploadCloud className="w-4 h-4" /> Replace Image
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingEvent({ ...editingEvent, image: "" });
+                                      setIsDirty(true);
+                                    }}
+                                    className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                    const file = e.dataTransfer.files[0];
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                      if (ev.target?.result) {
+                                        setEditingEvent({ ...editingEvent, image: ev.target.result as string });
+                                        setIsDirty(true);
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                                className="border-2 border-dashed border-slate-700 hover:border-[#EAA500] rounded-xl p-6 text-center bg-slate-900/60 hover:bg-slate-900 transition cursor-pointer group"
+                              >
+                                <label htmlFor="cover-file-event" className="cursor-pointer flex flex-col items-center justify-center space-y-2">
+                                  <div className="w-12 h-12 rounded-full bg-slate-800 group-hover:bg-[#EAA500]/20 text-slate-400 group-hover:text-[#EAA500] flex items-center justify-center transition">
+                                    <UploadCloud className="w-6 h-6" />
+                                  </div>
+                                  <span className="text-xs font-bold text-white group-hover:text-[#EAA500] transition">
+                                    Upload Photo or Drag &amp; Drop Image
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    Supports PNG, JPG, WEBP, GIF (Max 5MB)
+                                  </span>
+                                </label>
+                              </div>
+                            )}
+
+                            <input
+                              type="file"
+                              id="cover-file-event"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => {
+                                    if (ev.target?.result) {
+                                      setEditingEvent({ ...editingEvent, image: ev.target.result as string });
+                                      setIsDirty(true);
+                                    }
+                                  };
+                                  reader.readAsDataURL(e.target.files[0]);
+                                }
+                              }}
+                            />
+
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] uppercase font-bold text-slate-500">Or Paste URL:</span>
+                              <input
+                                type="text"
+                                placeholder="https://..."
+                                value={editingEvent.image || ""}
+                                onChange={(e) => {
+                                  setEditingEvent({ ...editingEvent, image: e.target.value });
+                                  setIsDirty(true);
+                                }}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-extrabold uppercase tracking-wider text-slate-300">
+                              Event Description
+                            </label>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {(editingEvent.description || "").length} / 500
+                            </span>
+                          </div>
+                          <textarea
+                            rows={4}
+                            value={editingEvent.description || ""}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, description: e.target.value });
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500] resize-none"
+                          />
+                        </div>
+
+                        {/* Publish Status */}
+                        <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                          <div>
+                            <p className="font-bold text-white text-xs">Publish Status</p>
+                            <p className="text-[11px] text-slate-400">Make event public on website</p>
+                          </div>
+                          <select
+                            value={editingEvent.status || "Published"}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, status: e.target.value as any });
+                              setIsDirty(true);
+                            }}
+                            className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-white font-bold text-xs"
+                          >
+                            <option value="Published">Published</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Archived">Archived</option>
+                          </select>
+                        </div>
+
+                        {/* Homepage Feature Toggle */}
+                        <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                          <div>
+                            <p className="font-bold text-white text-xs">Feature on Homepage</p>
+                            <p className="text-[11px] text-slate-400">Show in main homepage upcoming events section</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={editingEvent.featuredOnHome !== false}
+                            onChange={(e) => {
+                              setEditingEvent({ ...editingEvent, featuredOnHome: e.target.checked });
+                              setIsDirty(true);
+                            }}
+                            className="w-4 h-4 accent-[#EAA500] rounded cursor-pointer"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* RIGHT PANEL: LIVE WEBSITE PREVIEW (8 COLS STICKY) */}
