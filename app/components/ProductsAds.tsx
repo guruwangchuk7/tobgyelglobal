@@ -77,8 +77,71 @@ export default function ProductsAds() {
           ))}
         </div>
 
-        {/* Product Ads Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+        {/* MOBILE VIEW (< 768px): Horizontal Swipeable Carousel */}
+        <div className="md:hidden">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 px-1 -mx-1 scrollbar-none">
+            {filteredAds.map((ad) => (
+              <div
+                key={ad.id}
+                className="snap-start shrink-0 w-[82%] max-w-[300px] group bg-[#03142A] border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between text-left"
+              >
+                <div className="space-y-3">
+                  {/* Ad Image Container */}
+                  <div className="relative h-40 overflow-hidden bg-slate-900">
+                    <img
+                      src={ad.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80"}
+                      alt={ad.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#03142A] via-[#03142A]/40 to-transparent pointer-events-none" />
+                    
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-[#0A4D8C] text-white text-[10px] font-black uppercase tracking-wider shadow z-10">
+                      {ad.badgeTag || "Featured Ad"}
+                    </span>
+                  </div>
+
+                  {/* Ad Info */}
+                  <div className="px-4 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#EAA500]">
+                      <Building className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{ad.companyName}</span>
+                    </div>
+
+                    <h3 className="text-xs sm:text-sm font-bold text-white leading-snug line-clamp-2">
+                      {ad.title}
+                    </h3>
+
+                    <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                      {ad.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="p-4 pt-3">
+                  <Link
+                    href={ad.ctaUrl || "/register/exhibitor"}
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-800 active:bg-[#0A4D8C] text-white font-bold text-xs uppercase tracking-wider transition-colors min-h-[38px]"
+                  >
+                    <span>{ad.ctaText || "Inquire Product"}</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#EAA500]" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 mt-2 text-[11px] font-bold text-[#EAA500] uppercase tracking-widest">
+            <span>Swipe for more ads</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#EAA500]" />
+          </div>
+        </div>
+
+        {/* DESKTOP VIEW (>= 768px): Original Product Ads 4-Column Grid */}
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
           {filteredAds.map((ad) => (
             <div
               key={ad.id}

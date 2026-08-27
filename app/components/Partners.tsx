@@ -33,7 +33,7 @@ export default function Partners() {
 
   return (
     <section id="partners" className="py-12 sm:py-20 bg-white border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
         
         {/* Section Header */}
         <div className="text-center space-y-2">
@@ -43,22 +43,23 @@ export default function Partners() {
           <div className="w-16 h-1 bg-[#EAA500] mx-auto rounded-full" />
         </div>
 
-        {/* Government Partners */}
+        {/* 1. Government Partners */}
         <div className="space-y-6">
-          <h3 className="text-center text-xs sm:text-sm font-extrabold tracking-widest text-slate-600 uppercase">
-            Government Partners
-          </h3>
+          <div className="text-center">
+            <h3 className="text-xs sm:text-sm font-black tracking-widest text-[#03142A] uppercase">
+              Government Partners
+            </h3>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-8 items-center justify-items-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-8 items-center justify-items-center">
             {govtPartners.map((p, idx) => (
               <div 
                 key={idx} 
-                className={`flex flex-col items-center text-center space-y-2 group cursor-pointer w-full ${
-                  idx === 4 ? "col-span-2 sm:col-span-1 md:col-span-1 max-w-[180px] sm:max-w-none" : ""
+                className={`flex flex-col items-center text-center space-y-2 cursor-pointer w-full p-3.5 sm:p-0 rounded-xl bg-slate-50/80 sm:bg-transparent border border-slate-200/60 sm:border-none ${
+                  idx === 4 ? "col-span-2 sm:col-span-1 max-w-[220px] sm:max-w-none" : ""
                 }`}
               >
-                {/* Compact Logo Image Container */}
-                <div className="w-full h-16 sm:h-20 lg:h-24 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
+                <div className="w-full h-16 sm:h-20 lg:h-24 flex items-center justify-center p-1">
                   <img 
                     src={p.image} 
                     alt={p.name} 
@@ -66,7 +67,7 @@ export default function Partners() {
                   />
                 </div>
 
-                <p className="text-[11px] sm:text-xs font-semibold text-slate-700 max-w-[130px] leading-tight">
+                <p className="text-[11px] sm:text-xs font-bold text-slate-800 leading-tight">
                   {p.name}
                 </p>
               </div>
@@ -74,26 +75,31 @@ export default function Partners() {
           </div>
         </div>
 
-        {/* Divider line */}
-        <div className="w-full border-t border-slate-200/80 my-6 sm:my-8" />
+        {/* Section Divider */}
+        <div className="w-full border-t border-slate-200/80" />
 
-        {/* Corporate Partners */}
+        {/* 2. Corporate Partners */}
         <div className="space-y-6">
-          <h3 className="text-center text-xs sm:text-sm font-extrabold tracking-widest text-slate-600 uppercase">
-            Corporate Partners
-          </h3>
+          <div className="text-center">
+            <h3 className="text-xs sm:text-sm font-black tracking-widest text-[#0A4D8C] uppercase">
+              Corporate Partners
+            </h3>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 items-center justify-items-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-8 items-center justify-items-center">
             {corpPartners.map((cp, idx) => (
               <div 
                 key={idx} 
-                className="w-full h-14 sm:h-16 lg:h-20 flex items-center justify-center p-1 hover:scale-105 transition-transform cursor-pointer"
+                className="w-full h-20 sm:h-16 lg:h-20 flex flex-col items-center justify-center p-3 rounded-xl bg-slate-50/80 sm:bg-transparent border border-slate-200/60 sm:border-none cursor-pointer"
               >
                 <img 
                   src={cp.image} 
                   alt={cp.name} 
                   className={`max-h-10 sm:max-h-12 lg:max-h-14 w-auto object-contain mix-blend-multiply transition-transform ${cp.scale}`}
                 />
+                <span className="text-[10px] font-semibold text-slate-500 mt-1 sm:hidden">
+                  {cp.name}
+                </span>
               </div>
             ))}
           </div>
