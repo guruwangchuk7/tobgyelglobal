@@ -1250,28 +1250,6 @@ export default function AdminPage() {
                             />
                           </div>
 
-                          {/* Slug with Character Counter */}
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <label className="font-extrabold uppercase tracking-wider text-slate-300">
-                                URL Slug
-                              </label>
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {(editingEvent.slug || "").length} / 60
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              placeholder="bin-trade-showcase-2027"
-                              value={editingEvent.slug || ""}
-                              onChange={(e) => {
-                                setEditingEvent({ ...editingEvent, slug: e.target.value });
-                                setIsDirty(true);
-                              }}
-                              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-[#EAA500]"
-                            />
-                          </div>
-
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1">
@@ -1336,22 +1314,22 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          {/* Visual Image Upload Dropzone */}
+                          {/* Visual Drag & Drop Image Upload Dropzone */}
                           <div>
                             <label className="block font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
                               Cover Image Banner
                             </label>
                             <div className="space-y-3">
-                              {editingEvent.image && (
-                                <div className="relative h-40 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 group">
+                              {editingEvent.image ? (
+                                <div className="relative h-44 rounded-xl overflow-hidden border border-slate-700 bg-slate-900 group">
                                   <img
                                     src={editingEvent.image}
                                     alt="Cover Preview"
                                     className="w-full h-full object-cover"
                                   />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <label htmlFor="cover-file" className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer">
-                                      Replace Image
+                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                    <label htmlFor="cover-file-event" className="px-4 py-2 rounded-lg bg-[#EAA500] hover:bg-[#d49400] text-slate-950 font-black text-xs cursor-pointer shadow-md flex items-center gap-1.5 transition">
+                                      <UploadCloud className="w-4 h-4" /> Replace Image
                                     </label>
                                     <button
                                       type="button"
@@ -1359,17 +1337,52 @@ export default function AdminPage() {
                                         setEditingEvent({ ...editingEvent, image: "" });
                                         setIsDirty(true);
                                       }}
-                                      className="px-3 py-1.5 rounded bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs"
+                                      className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition"
                                     >
                                       Remove
                                     </button>
                                   </div>
                                 </div>
+                              ) : (
+                                <div
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                      const file = e.dataTransfer.files[0];
+                                      const reader = new FileReader();
+                                      reader.onload = (ev) => {
+                                        if (ev.target?.result) {
+                                          setEditingEvent({ ...editingEvent, image: ev.target.result as string });
+                                          setIsDirty(true);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                  className="border-2 border-dashed border-slate-700 hover:border-[#EAA500] rounded-xl p-6 text-center bg-slate-900/60 hover:bg-slate-900 transition cursor-pointer group"
+                                >
+                                  <label htmlFor="cover-file-event" className="cursor-pointer flex flex-col items-center justify-center space-y-2">
+                                    <div className="w-12 h-12 rounded-full bg-slate-800 group-hover:bg-[#EAA500]/20 text-slate-400 group-hover:text-[#EAA500] flex items-center justify-center transition">
+                                      <UploadCloud className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-xs font-bold text-white group-hover:text-[#EAA500] transition">
+                                      Upload Photo or Drag &amp; Drop Image
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">
+                                      Supports PNG, JPG, WEBP, GIF (Max 5MB)
+                                    </span>
+                                  </label>
+                                </div>
                               )}
 
                               <input
                                 type="file"
-                                id="cover-file"
+                                id="cover-file-event"
                                 accept="image/*"
                                 className="hidden"
                                 onChange={(e) => {
@@ -1386,16 +1399,19 @@ export default function AdminPage() {
                                 }}
                               />
 
-                              <input
-                                type="text"
-                                placeholder="Image URL (https://...)"
-                                value={editingEvent.image || ""}
-                                onChange={(e) => {
-                                  setEditingEvent({ ...editingEvent, image: e.target.value });
-                                  setIsDirty(true);
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-[#EAA500]"
-                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] uppercase font-bold text-slate-500">Or Paste URL:</span>
+                                <input
+                                  type="text"
+                                  placeholder="https://..."
+                                  value={editingEvent.image || ""}
+                                  onChange={(e) => {
+                                    setEditingEvent({ ...editingEvent, image: e.target.value });
+                                    setIsDirty(true);
+                                  }}
+                                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-[#EAA500]"
+                                />
+                              </div>
                             </div>
                           </div>
 
