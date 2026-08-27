@@ -19,6 +19,15 @@ export const metadata: Metadata = {
     template: "%s | Tobgyel Global Expos",
   },
   description: "Connecting global businesses, investors, innovators, and communities through world-class exhibitions and events in Bhutan.",
+  icons: {
+    icon: [
+      { url: "/logo.jpeg", type: "image/jpeg" },
+    ],
+    shortcut: ["/logo.jpeg"],
+    apple: [
+      { url: "/logo.jpeg" },
+    ],
+  },
   verification: {
     google: "QLeGh1kl2PRDF97EFo0fZPprznesEjHV7Cm88oAnG44",
   },
@@ -35,6 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <link rel="icon" href="/logo.jpeg" type="image/jpeg" />
+        <link rel="shortcut icon" href="/logo.jpeg" type="image/jpeg" />
+        <link rel="apple-touch-icon" href="/logo.jpeg" />
         <meta name="google-site-verification" content="QLeGh1kl2PRDF97EFo0fZPprznesEjHV7Cm88oAnG44" />
         <meta name="google-site-verification" content="TirE6t0RVKEmMHM-xUkBXl031MGIZeYx_MsZxXJKkr4" />
         {/* Google tag (gtag.js) */}
