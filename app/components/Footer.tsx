@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Phone, Mail, Globe as GlobeIcon, CheckCircle, Loader2 } from "lucide-react";
+import { Phone, Mail, Globe as GlobeIcon, CheckCircle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import Globe from "./Globe";
 import { getCMSContact, INITIAL_CONTACT, ContactConfigCMS } from "@/app/lib/cmsStore";
 
@@ -16,6 +16,7 @@ export default function Footer() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showQuickLinks, setShowQuickLinks] = useState(false);
 
   useEffect(() => {
     const loaded = getCMSContact();
@@ -46,14 +47,14 @@ export default function Footer() {
   };
 
   return (
-    <footer id="contact" className="bg-[#03142A] text-white pt-10 sm:pt-14 pb-6 border-t border-slate-900 relative overflow-hidden pb-safe">
+    <footer id="contact" className="bg-[#03142A] text-white pt-8 sm:pt-10 pb-5 sm:pb-6 border-t border-slate-900 relative overflow-hidden pb-safe">
 
       {/* Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* MOBILE RESPONSIVE LAYOUT (< 1024px) - Matches reference picture layout */}
         <div className="lg:hidden space-y-8 pb-10 border-b border-slate-800/80 text-left max-w-xl mx-auto">
-          
+
           {/* 1. First show the Map / Globe on Mobile */}
           <div className="flex items-center justify-center pt-2">
             <Globe className="w-full max-w-[280px] sm:max-w-[340px] mx-auto" />
@@ -127,11 +128,11 @@ export default function Footer() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 px-6 rounded bg-[#D49900] hover:bg-[#bd8800] active:bg-[#a37500] disabled:opacity-50 text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-md min-h-[48px] flex items-center justify-center gap-2"
+                  className="w-full py-3.5 px-6 rounded-lg bg-[#EAA500] hover:bg-[#d49400] active:bg-[#ba8200] disabled:opacity-50 text-[#03142A] font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg hover:shadow-xl active:scale-[0.99] min-h-[48px] flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#03142A]" />
                       <span>Sending...</span>
                     </>
                   ) : (
@@ -292,7 +293,7 @@ export default function Footer() {
                     placeholder="Your Name"
                     value={formData.name || ""}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-700/80 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-[#EAA500] focus:ring-1 focus:ring-[#EAA500] transition-all min-h-[44px]"
                   />
                 </div>
 
@@ -303,7 +304,7 @@ export default function Footer() {
                     placeholder="Your Email"
                     value={formData.email || ""}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-700/80 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-[#EAA500] focus:ring-1 focus:ring-[#EAA500] transition-all min-h-[44px]"
                   />
                 </div>
 
@@ -313,7 +314,7 @@ export default function Footer() {
                     placeholder="Subject"
                     value={formData.subject || ""}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] min-h-[44px]"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-700/80 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-[#EAA500] focus:ring-1 focus:ring-[#EAA500] transition-all min-h-[44px]"
                   />
                 </div>
 
@@ -324,7 +325,7 @@ export default function Footer() {
                     placeholder="Message"
                     value={formData.message || ""}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#EAA500] resize-none"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-900/80 border border-slate-700/80 text-white text-sm placeholder-slate-400 focus:outline-none focus:border-[#EAA500] focus:ring-1 focus:ring-[#EAA500] transition-all resize-none"
                   />
                 </div>
 
@@ -332,11 +333,11 @@ export default function Footer() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-6 rounded-lg bg-[#D49900] hover:bg-[#bd8800] active:bg-[#a37500] disabled:opacity-50 text-white font-extrabold text-sm uppercase tracking-widest transition-colors shadow-md min-h-[48px] flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-6 rounded-lg bg-[#EAA500] hover:bg-[#d49400] active:bg-[#ba8200] disabled:opacity-50 text-[#03142A] font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg hover:shadow-xl active:scale-[0.99] min-h-[48px] flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <Loader2 className="w-4 h-4 animate-spin text-[#03142A]" />
                         <span>Sending Message...</span>
                       </>
                     ) : (
@@ -351,7 +352,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Footer Bar */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-300 font-medium">
+        <div className="pt-5 sm:pt-6 pb-2 sm:pb-3 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-300 font-medium">
           <p className="text-center sm:text-left">
             © 2024 Tobgyel Global Expos. All Rights Reserved.{" "}
             <span className="hidden sm:inline text-slate-500">|</span>{" "}
@@ -364,14 +365,76 @@ export default function Footer() {
                 className="text-[#EAA500] hover:underline font-bold transition-colors"
               >
                 KodaDev
-              </a>{" "}
-              <span className="text-slate-500">•</span>{" "}
-              <Link href="/admin" className="text-slate-400 hover:text-white transition-colors">
-                Admin Portal
-              </Link>
+              </a>
             </span>
           </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-400 font-medium">
+            <button
+              type="button"
+              onClick={() => setShowQuickLinks(!showQuickLinks)}
+              className="hover:text-[#EAA500] transition-colors cursor-pointer inline-flex items-center gap-1 focus:outline-none"
+              aria-expanded={showQuickLinks}
+            >
+              <span>Quick Links</span>
+              {showQuickLinks ? (
+                <ChevronUp className="w-3.5 h-3.5 text-[#EAA500]" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              )}
+            </button>
+            <span className="text-slate-600">•</span>
+            <Link href="/privacy" className="hover:text-[#EAA500] transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-slate-600">•</span>
+            <Link href="/terms" className="hover:text-[#EAA500] transition-colors">
+              Terms of Use
+            </Link>
+            <span className="text-slate-600">•</span>
+            <Link href="/admin" className="hover:text-white transition-colors">
+              Admin Portal
+            </Link>
+          </div>
         </div>
+
+        {/* Collapsible Quick Links Panel */}
+        {showQuickLinks && (
+          <div className="mt-3 pt-3 border-t border-slate-800/60 transition-all">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 font-semibold text-xs text-slate-200">
+              <Link
+                href="/participants"
+                className="hover:text-[#EAA500] transition-colors inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-md border border-slate-700/80 hover:border-[#EAA500]/50"
+              >
+                <span className="text-[#EAA500]">•</span> International Participants
+              </Link>
+              <Link
+                href="/register/exhibitor"
+                className="hover:text-[#EAA500] transition-colors inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-md border border-slate-700/80 hover:border-[#EAA500]/50"
+              >
+                <span className="text-[#EAA500]">•</span> Register as Exhibitor
+              </Link>
+              <Link
+                href="/register/sponsor"
+                className="hover:text-[#EAA500] transition-colors inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-md border border-slate-700/80 hover:border-[#EAA500]/50"
+              >
+                <span className="text-[#EAA500]">•</span> Become a Sponsor
+              </Link>
+              <Link
+                href="/register/visitor"
+                className="hover:text-[#EAA500] transition-colors inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-md border border-slate-700/80 hover:border-[#EAA500]/50"
+              >
+                <span className="text-[#EAA500]">•</span> Visitor Registration
+              </Link>
+              <Link
+                href="/regulations"
+                className="hover:text-[#EAA500] transition-colors inline-flex items-center gap-2 bg-slate-900/80 px-3.5 py-1.5 rounded-md border border-slate-700/80 hover:border-[#EAA500]/50"
+              >
+                <span className="text-[#EAA500]">•</span> Tax &amp; Customs Regulations
+              </Link>
+            </div>
+          </div>
+        )}
 
       </div>
     </footer>

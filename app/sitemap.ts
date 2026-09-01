@@ -15,6 +15,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/contact",
     "/register",
     "/regulations",
+    "/privacy",
+    "/terms",
   ];
 
   const staticEntries = staticRoutes.map((route) => ({
