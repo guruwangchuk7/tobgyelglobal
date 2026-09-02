@@ -185,18 +185,6 @@ export const INITIAL_PRODUCT_ADS: ProductAdCMS[] = [
     active: true,
   },
   {
-    id: "ad-2",
-    title: "Solar Agri-Machinery & Micro-Hydro Systems",
-    companyName: "Druk Green Tech Solutions Ltd.",
-    category: "Machinery & Tech",
-    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
-    description: "Eco-friendly solar powered grain dryers, mountain farm tractors, and zero-emission micro-hydro electricity generators.",
-    badgeTag: "Tech Showcase",
-    ctaText: "Request Tech Demo",
-    ctaUrl: "/register/exhibitor",
-    active: true,
-  },
-  {
     id: "ad-3",
     title: "Hand-Woven Royal Silk Kishuthara Textiles",
     companyName: "Thimphu Heritage Weavers Guild",
@@ -841,7 +829,7 @@ export const getCMSProductAds = (): ProductAdCMS[] => {
     parsed = JSON.parse(stored);
   }
 
-  parsed = parsed.filter((a) => !deletedIds.includes(a.id));
+  parsed = parsed.filter((a) => a.id !== "ad-2" && !deletedIds.includes(a.id));
 
   if (!stored) {
     const missingInitial = INITIAL_PRODUCT_ADS.filter(

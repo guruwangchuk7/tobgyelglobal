@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/privacy",
     "/terms",
     "/cancellation-policy",
+    "/quick-links",
   ];
 
   const staticEntries = staticRoutes.map((route) => ({

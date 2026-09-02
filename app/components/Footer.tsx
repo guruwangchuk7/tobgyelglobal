@@ -402,13 +402,18 @@ export default function Footer() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-400 font-medium">
+            <Link
+              href="/quick-links"
+              className="hover:text-[#EAA500] transition-colors cursor-pointer inline-flex items-center gap-1 font-extrabold text-white"
+            >
+              <span>Quick Links</span>
+            </Link>
             <button
               type="button"
               onClick={() => setShowQuickLinks(!showQuickLinks)}
-              className="hover:text-[#EAA500] transition-colors cursor-pointer inline-flex items-center gap-1 focus:outline-none"
+              className="text-xs text-slate-400 hover:text-[#EAA500] transition-colors cursor-pointer inline-flex items-center gap-1 focus:outline-none"
               aria-expanded={showQuickLinks}
             >
-              <span>Quick Links</span>
               {showQuickLinks ? (
                 <ChevronUp className="w-3.5 h-3.5 text-[#EAA500]" />
               ) : (

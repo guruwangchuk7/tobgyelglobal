@@ -314,8 +314,8 @@ export default function AdminPage() {
     };
     saveCMSEvent(itemToSave);
     setIsDirty(false);
-    setSaveSuccessMsg(`Event ${publishStatus === "Published" ? "Published Live!" : "Saved as Draft"}`);
-    setTimeout(() => setSaveSuccessMsg(""), 3000);
+    setSaveSuccessMsg(publishStatus === "Published" ? "🎉 Event Published Live Successfully!" : "Draft Saved Successfully!");
+    setTimeout(() => setSaveSuccessMsg(""), 4000);
     refreshData();
   };
 
@@ -349,8 +349,8 @@ export default function AdminPage() {
     };
     saveCMSNews(itemToSave);
     setIsDirty(false);
-    setSaveSuccessMsg(`Article ${publishStatus === "Published" ? "Published Live!" : "Saved as Draft"}`);
-    setTimeout(() => setSaveSuccessMsg(""), 3000);
+    setSaveSuccessMsg(publishStatus === "Published" ? "🎉 Article Published Live Successfully!" : "Draft Saved Successfully!");
+    setTimeout(() => setSaveSuccessMsg(""), 4000);
     refreshData();
   };
 
@@ -1272,6 +1272,20 @@ export default function AdminPage() {
                           </button>
                         </div>
                       </div>
+
+                      {saveSuccessMsg && (
+                        <div className="p-3.5 rounded-xl bg-emerald-950/90 border border-emerald-500/80 text-emerald-200 text-xs font-bold flex items-center justify-between shadow-lg animate-in fade-in duration-200">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1 rounded-full bg-emerald-500 text-slate-950 font-black shrink-0">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                            <span>{saveSuccessMsg}</span>
+                          </div>
+                          <button onClick={() => setSaveSuccessMsg("")} className="text-emerald-400 hover:text-white p-1">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
 
                       <div className="space-y-5 text-xs">
                         {/* Title with Character Counter */}
@@ -2782,6 +2796,28 @@ export default function AdminPage() {
             )}
 
           </main>
+        </div>
+      )}
+
+      {/* Global High-Visibility Success Notification Toast */}
+      {saveSuccessMsg && (
+        <div className="fixed top-6 right-6 z-50 max-w-md bg-emerald-950 border border-emerald-500/80 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-emerald-500 text-slate-950 shrink-0 font-black">
+              <Check className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold text-white">{saveSuccessMsg}</h4>
+              <p className="text-[11px] text-emerald-200/90 font-medium">Your changes have been saved and are live on the website.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setSaveSuccessMsg("")}
+            className="text-emerald-400 hover:text-white p-1.5 rounded-lg hover:bg-emerald-900/50 transition-colors"
+            aria-label="Close notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
