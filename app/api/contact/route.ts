@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/app/lib/supabaseClient";
+import { supabaseAdmin, isSupabaseAdminConfigured } from "@/app/lib/supabaseAdmin";
+import { isHoneypotTripped } from "@/app/lib/spam";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { name, email, subject, message, recipient } = body;
+
+    if (isHoneypotTripped(body)) {
+      return NextResponse.json({ success: true, message: "Received." });
+    }
 
     if (!name || !email || !message) {
       return NextResponse.json(
@@ -22,8 +27,8 @@ export async function POST(request: Request) {
     };
 
     // 1. Save inquiry record to Supabase DB if configured
-    if (isSupabaseConfigured()) {
-      const { error: dbError } = await supabase.from("contact_inquiries").insert([payload]);
+    if (isSupabaseAdminConfigured()) {
+      const { error: dbError } = await supabaseAdmin.from("contact_inquiries").insert([payload]);
       if (dbError) {
         console.error("[SUPABASE CONTACT ERROR]", dbError);
       }
@@ -65,7 +70,11 @@ export async function POST(request: Request) {
       console.log(`[FORMSUBMIT RESPONSE for ${targetEmail}]`, result);
 
       // Fallback: If FormSubmit returns error, dispatch via Web3Forms API
-      if (result.success === "false" || result.success === false) {
+      // (only when an access key is provisioned via env — no secret is embedded in source)
+      if (
+        (result.success === "false" || result.success === false) &&
+        process.env.WEB3FORMS_ACCESS_KEY
+      ) {
         console.log("[SWITCHING TO WEB3FORMS DISPATCH...]");
         await fetch("https://api.web3forms.com/submit", {
           method: "POST",
@@ -74,7 +83,7 @@ export async function POST(request: Request) {
             Accept: "application/json",
           },
           body: JSON.stringify({
-            access_key: process.env.WEB3FORMS_ACCESS_KEY || "8d7dfb24-[#REDACTED_API_KEY_FALLBACK]",
+            access_key: process.env.WEB3FORMS_ACCESS_KEY,
             name: name,
             email: email,
             subject: subject || `[Website Inquiry] ${name}`,
@@ -97,24 +106,6 @@ export async function POST(request: Request) {
       { error: err.message || "Failed to process contact form submission." },
       { status: 500 }
     );
-  }
-}
-export async function GET() {
-  try {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from("contact_inquiries")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        return NextResponse.json({ success: true, inquiries: [] });
-      }
-      return NextResponse.json({ success: true, inquiries: data || [] });
-    }
-    return NextResponse.json({ success: true, inquiries: [] });
-  } catch (err: any) {
-    return NextResponse.json({ success: true, inquiries: [] });
   }
 }
 

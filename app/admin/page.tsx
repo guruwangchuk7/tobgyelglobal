@@ -173,13 +173,17 @@ export default function AdminPage() {
   const [contentOpen, setContentOpen] = useState(true);
   const [submissionsOpen, setSubmissionsOpen] = useState(true);
 
-  // Check login session on mount
+  // Check login session on mount (verified server-side via httpOnly cookie)
   useEffect(() => {
-    const session = localStorage.getItem("tobgyel_admin_session");
-    if (session === "active") {
-      setIsLoggedIn(true);
-    }
-    refreshData();
+    fetch("/api/admin/session")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated) setIsLoggedIn(true);
+      })
+      .catch(() => {})
+      .finally(() => {
+        refreshData();
+      });
   }, []);
 
   const refreshData = async () => {
@@ -210,21 +214,33 @@ export default function AdminPage() {
     setRegulationsConfig(getCMSRegulations());
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === "admin" && password === "admin123") {
-      setIsLoggedIn(true);
-      localStorage.setItem("tobgyel_admin_session", "active");
-      setLoginError("");
-      refreshData();
-    } else {
-      setLoginError("Invalid username or password. (Use admin / admin123)");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.ok) {
+        setIsLoggedIn(true);
+        setLoginError("");
+        refreshData();
+      } else {
+        setLoginError("Invalid username or password.");
+      }
+    } catch {
+      setLoginError("Login failed. Please try again.");
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {
+      // ignore network errors on logout
+    }
     setIsLoggedIn(false);
-    localStorage.removeItem("tobgyel_admin_session");
   };
 
   const selectModule = (module: typeof mainModule) => {
@@ -581,10 +597,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              <div className="p-3 rounded bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400">
-                <span className="font-bold text-[#EAA500]">Credentials:</span> Username: <code className="text-white">admin</code> | Password: <code className="text-white">admin123</code>
-              </div>
-
               <button
                 type="submit"
                 className="w-full py-3 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 min-h-[48px]"
@@ -861,6 +873,58 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <Building className="w-3.5 h-3.5" />
                         <span>Partners &amp; Sponsors</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => selectModule("why-exhibit")}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "why-exhibit"
+                          ? "bg-slate-800 text-[#EAA500] font-bold"
+                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Why Exhibit</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => selectModule("participants")}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "participants"
+                          ? "bg-slate-800 text-[#EAA500] font-bold"
+                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>Participants Guide</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => selectModule("visit")}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "visit"
+                          ? "bg-slate-800 text-[#EAA500] font-bold"
+                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Plane className="w-3.5 h-3.5" />
+                        <span>Plan Your Visit</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => selectModule("regulations")}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "regulations"
+                          ? "bg-slate-800 text-[#EAA500] font-bold"
+                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Landmark className="w-3.5 h-3.5" />
+                        <span>Regulations</span>
                       </div>
                     </button>
                   </div>
@@ -2599,6 +2663,110 @@ export default function AdminPage() {
                                 </button>
                                 <button
                                   onClick={() => handleDeleteExhibitor(exh.id)}
+                                  className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                      {mainModule === "sponsors" &&
+                        filteredSponsors.map((sp) => (
+                          <tr key={sp.id} className="hover:bg-slate-900/50 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-white">
+                              {sp.organizationName}
+                              <div className="text-[11px] text-slate-400 font-normal">{sp.contactPerson}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <div>{sp.email}</div>
+                              <div className="text-slate-400">{sp.phone}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <span className="font-semibold text-[#EAA500]">{sp.tier}</span>
+                              <div className="text-slate-400">{sp.budget}</div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${sp.status === "Approved"
+                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                    : sp.status === "Pending"
+                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                      : "bg-red-500/20 text-red-300 border border-red-500/40"
+                                  }`}
+                              >
+                                {sp.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleSponsorStatus(sp.id, "Approved")}
+                                  className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleSponsorStatus(sp.id, "Rejected")}
+                                  className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSponsor(sp.id)}
+                                  className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                      {mainModule === "visitors" &&
+                        filteredVisitors.map((vis) => (
+                          <tr key={vis.id} className="hover:bg-slate-900/50 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-white">
+                              {vis.fullName}
+                              <div className="text-[11px] text-slate-400 font-normal">{vis.country}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <div>{vis.email}</div>
+                              <div className="text-slate-400">{vis.phone}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <span className="font-semibold text-[#EAA500]">{vis.passCode}</span>
+                              <div className="text-slate-400">{vis.profession}</div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${vis.status === "Approved"
+                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                    : vis.status === "Pending"
+                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                      : "bg-red-500/20 text-red-300 border border-red-500/40"
+                                  }`}
+                              >
+                                {vis.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleVisitorStatus(vis.id, "Approved")}
+                                  className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleVisitorStatus(vis.id, "Rejected")}
+                                  className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteVisitor(vis.id)}
                                   className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
                                 >
                                   <Trash2 className="w-4 h-4" />

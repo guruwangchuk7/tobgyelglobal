@@ -13,6 +13,7 @@ export default function Footer() {
     email: "",
     subject: "Inquiry - Tobgyel Global Expos",
     message: "",
+    website: "", // honeypot — must stay empty for real users
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ export default function Footer() {
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch("/api/contact", {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -37,12 +38,17 @@ export default function Footer() {
           recipient: contact.emailGeneral || "info@tobgyelglobalxpos.com",
         }),
       });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || result?.success === false) {
+        throw new Error(result?.error || "Message could not be delivered.");
+      }
+      setSubmitted(true);
+      setFormData({ name: "", email: "", subject: "Inquiry - Tobgyel Global Expos", message: "", website: "" });
     } catch (err) {
       console.error(err);
+      alert("Sorry, your message could not be sent right now. Please try again, or email us directly.");
     } finally {
       setLoading(false);
-      setSubmitted(true);
-      setFormData({ name: "", email: "", subject: "Inquiry - Tobgyel Global Expos", message: "" });
     }
   };
 
@@ -81,6 +87,19 @@ export default function Footer() {
             </div>
           ) : (
             <form onSubmit={handleFormSubmit} className="space-y-4 pt-2">
+              <div className="hidden" aria-hidden="true">
+                <label>
+                  Website
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </label>
+              </div>
               <div>
                 <input
                   type="text"
@@ -286,6 +305,19 @@ export default function Footer() {
               </div>
             ) : (
               <form onSubmit={handleFormSubmit} className="space-y-3.5">
+                <div className="hidden" aria-hidden="true">
+                  <label>
+                    Website
+                    <input
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    />
+                  </label>
+                </div>
                 <div>
                   <input
                     type="text"
@@ -389,7 +421,11 @@ export default function Footer() {
             </Link>
             <span className="text-slate-600">•</span>
             <Link href="/terms" className="hover:text-[#EAA500] transition-colors">
-              Terms of Use
+              Terms &amp; Conditions
+            </Link>
+            <span className="text-slate-600">•</span>
+            <Link href="/cancellation-policy" className="hover:text-[#EAA500] transition-colors">
+              Cancellation Policy
             </Link>
             <span className="text-slate-600">•</span>
             <Link href="/admin" className="hover:text-white transition-colors">

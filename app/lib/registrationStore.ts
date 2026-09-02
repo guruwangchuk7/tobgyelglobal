@@ -1,6 +1,5 @@
 "use client";
 
-import { supabase, isSupabaseConfigured } from "./supabaseClient";
 
 export interface ExhibitorSubmission {
   id: string;
@@ -70,14 +69,12 @@ export const getExhibitors = (): ExhibitorSubmission[] => {
 };
 
 export const fetchExhibitorsAsync = async (): Promise<ExhibitorSubmission[]> => {
-  if (isSupabaseConfigured()) {
-    try {
-      const { data, error } = await supabase
-        .from("exhibitors")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error && data) {
-        return data.map((d: any) => ({
+  try {
+    const res = await fetch("/api/admin/registrations?type=exhibitor");
+    if (res.ok) {
+      const { records } = await res.json();
+      if (Array.isArray(records)) {
+        return records.map((d: any) => ({
           id: d.id,
           companyName: d.company_name,
           contactPerson: d.contact_person,
@@ -90,9 +87,9 @@ export const fetchExhibitorsAsync = async (): Promise<ExhibitorSubmission[]> => 
           submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
         }));
       }
-    } catch (err) {
-      console.error("Error fetching exhibitors from Supabase:", err);
     }
+  } catch (err) {
+    console.error("Error fetching exhibitors:", err);
   }
   return getExhibitors();
 };
@@ -114,15 +111,15 @@ export const addExhibitor = async (
     localStorage.setItem(STORAGE_KEYS.EXHIBITORS, JSON.stringify(updated));
   }
 
-  // Server API submission to database
-  try {
-    await fetch("/api/register/exhibitor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } catch (err) {
-    console.error("Failed to sync exhibitor application with server:", err);
+  // Server API submission to database — surface failures to the caller
+  const res = await fetch("/api/register/exhibitor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok || result?.error) {
+    throw new Error(result?.error || "Failed to submit exhibitor application.");
   }
 
   return newEntry;
@@ -135,12 +132,14 @@ export const updateExhibitorStatus = async (id: string, status: "Pending" | "App
     localStorage.setItem(STORAGE_KEYS.EXHIBITORS, JSON.stringify(updated));
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.from("exhibitors").update({ status }).eq("id", id);
-    } catch (err) {
-      console.error("Error updating exhibitor status in Supabase:", err);
-    }
+  try {
+    await fetch("/api/admin/registrations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "exhibitor", id, status }),
+    });
+  } catch (err) {
+    console.error("Error updating exhibitor status:", err);
   }
 };
 
@@ -151,12 +150,14 @@ export const deleteExhibitor = async (id: string) => {
     localStorage.setItem(STORAGE_KEYS.EXHIBITORS, JSON.stringify(updated));
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.from("exhibitors").delete().eq("id", id);
-    } catch (err) {
-      console.error("Error deleting exhibitor from Supabase:", err);
-    }
+  try {
+    await fetch("/api/admin/registrations", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "exhibitor", id }),
+    });
+  } catch (err) {
+    console.error("Error deleting exhibitor:", err);
   }
 };
 
@@ -173,14 +174,12 @@ export const getSponsors = (): SponsorSubmission[] => {
 };
 
 export const fetchSponsorsAsync = async (): Promise<SponsorSubmission[]> => {
-  if (isSupabaseConfigured()) {
-    try {
-      const { data, error } = await supabase
-        .from("sponsors")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error && data) {
-        return data.map((d: any) => ({
+  try {
+    const res = await fetch("/api/admin/registrations?type=sponsor");
+    if (res.ok) {
+      const { records } = await res.json();
+      if (Array.isArray(records)) {
+        return records.map((d: any) => ({
           id: d.id,
           organizationName: d.organization_name,
           contactPerson: d.contact_person,
@@ -193,9 +192,9 @@ export const fetchSponsorsAsync = async (): Promise<SponsorSubmission[]> => {
           submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
         }));
       }
-    } catch (err) {
-      console.error("Error fetching sponsors from Supabase:", err);
     }
+  } catch (err) {
+    console.error("Error fetching sponsors:", err);
   }
   return getSponsors();
 };
@@ -216,14 +215,14 @@ export const addSponsor = async (
     localStorage.setItem(STORAGE_KEYS.SPONSORS, JSON.stringify(updated));
   }
 
-  try {
-    await fetch("/api/register/sponsor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } catch (err) {
-    console.error("Failed to sync sponsor application with server:", err);
+  const res = await fetch("/api/register/sponsor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok || result?.error) {
+    throw new Error(result?.error || "Failed to submit sponsor application.");
   }
 
   return newEntry;
@@ -236,12 +235,14 @@ export const updateSponsorStatus = async (id: string, status: "Pending" | "Appro
     localStorage.setItem(STORAGE_KEYS.SPONSORS, JSON.stringify(updated));
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.from("sponsors").update({ status }).eq("id", id);
-    } catch (err) {
-      console.error("Error updating sponsor status in Supabase:", err);
-    }
+  try {
+    await fetch("/api/admin/registrations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "sponsor", id, status }),
+    });
+  } catch (err) {
+    console.error("Error updating sponsor status:", err);
   }
 };
 
@@ -252,12 +253,14 @@ export const deleteSponsor = async (id: string) => {
     localStorage.setItem(STORAGE_KEYS.SPONSORS, JSON.stringify(updated));
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.from("sponsors").delete().eq("id", id);
-    } catch (err) {
-      console.error("Error deleting sponsor from Supabase:", err);
-    }
+  try {
+    await fetch("/api/admin/registrations", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "sponsor", id }),
+    });
+  } catch (err) {
+    console.error("Error deleting sponsor:", err);
   }
 };
 
@@ -274,14 +277,12 @@ export const getVisitors = (): VisitorSubmission[] => {
 };
 
 export const fetchVisitorsAsync = async (): Promise<VisitorSubmission[]> => {
-  if (isSupabaseConfigured()) {
-    try {
-      const { data, error } = await supabase
-        .from("visitors")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error && data) {
-        return data.map((d: any) => ({
+  try {
+    const res = await fetch("/api/admin/registrations?type=visitor");
+    if (res.ok) {
+      const { records } = await res.json();
+      if (Array.isArray(records)) {
+        return records.map((d: any) => ({
           id: d.id,
           fullName: d.full_name,
           email: d.email,
@@ -295,9 +296,9 @@ export const fetchVisitorsAsync = async (): Promise<VisitorSubmission[]> => {
           submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
         }));
       }
-    } catch (err) {
-      console.error("Error fetching visitors from Supabase:", err);
     }
+  } catch (err) {
+    console.error("Error fetching visitors:", err);
   }
   return getVisitors();
 };
@@ -320,18 +321,17 @@ export const addVisitor = async (
     localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(updated));
   }
 
-  try {
-    const res = await fetch("/api/register/visitor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const result = await res.json();
-    if (result.data?.pass_code) {
-      newEntry.passCode = result.data.pass_code;
-    }
-  } catch (err) {
-    console.error("Failed to sync visitor registration with server:", err);
+  const res = await fetch("/api/register/visitor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok || result?.error) {
+    throw new Error(result?.error || "Failed to submit visitor registration.");
+  }
+  if (result.data?.pass_code) {
+    newEntry.passCode = result.data.pass_code;
   }
 
   return newEntry;
@@ -344,12 +344,14 @@ export const updateVisitorStatus = async (id: string, status: "Pending" | "Appro
     localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(updated));
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.from("visitors").update({ status }).eq("id", id);
-    } catch (err) {
-      console.error("Error updating visitor status in Supabase:", err);
-    }
+  try {
+    await fetch("/api/admin/registrations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "visitor", id, status }),
+    });
+  } catch (err) {
+    console.error("Error updating visitor status:", err);
   }
 };
 
@@ -360,11 +362,13 @@ export const deleteVisitor = async (id: string) => {
     localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(updated));
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.from("visitors").delete().eq("id", id);
-    } catch (err) {
-      console.error("Error deleting visitor from Supabase:", err);
-    }
+  try {
+    await fetch("/api/admin/registrations", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "visitor", id }),
+    });
+  } catch (err) {
+    console.error("Error deleting visitor:", err);
   }
 };

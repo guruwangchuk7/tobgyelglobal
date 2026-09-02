@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/app/lib/supabaseClient";
+import { supabaseAdmin, isSupabaseAdminConfigured } from "@/app/lib/supabaseAdmin";
+import { isHoneypotTripped } from "@/app/lib/spam";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { companyName, contactPerson, email, phone, sector, boothSize, description } = body;
+
+    if (isHoneypotTripped(body)) {
+      return NextResponse.json({ success: true, message: "Received." });
+    }
 
     if (!companyName || !contactPerson || !email || !phone) {
       return NextResponse.json(
@@ -25,8 +30,8 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
     };
 
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.from("exhibitors").insert([payload]).select();
+    if (isSupabaseAdminConfigured()) {
+      const { data, error } = await supabaseAdmin.from("exhibitors").insert([payload]).select();
       if (error) {
         console.error("[SUPABASE EXHIBITOR ERROR]", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

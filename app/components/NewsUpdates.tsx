@@ -24,10 +24,15 @@ export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
     });
   }, []);
 
+  // On the home page: only news flagged featuredOnHome.
+  // On the /news page: every published article.
+  const displayNews =
+    from === "home" ? newsItems.filter((n) => n.featuredOnHome) : newsItems;
+
   return (
     <section id="news" className="py-12 sm:py-20 bg-white border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
-        
+
         {/* Section Header */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-wider text-[#03142A] uppercase font-sans">
@@ -36,7 +41,7 @@ export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
           <div className="w-16 h-1 bg-[#EAA500] mx-auto rounded-full" />
         </div>
 
-        {newsItems.length === 0 ? (
+        {displayNews.length === 0 ? (
           <div className="text-center py-12 px-6 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm max-w-md mx-auto space-y-2">
             <Newspaper className="w-8 h-8 text-[#EAA500] mx-auto opacity-80" />
             <p className="text-sm font-bold text-slate-800 uppercase tracking-wider">No Latest News &amp; Updates Scheduled</p>
@@ -47,7 +52,7 @@ export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
             {/* MOBILE VIEW (< 768px): Horizontal Swipeable News Carousel */}
             <div className="md:hidden">
               <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 px-1 -mx-1 scrollbar-none">
-                {newsItems.map((news) => (
+                {displayNews.map((news) => (
                   <Link
                     key={news.id}
                     href={`/news/${news.id}?from=${from}`}
@@ -89,7 +94,7 @@ export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
 
             {/* DESKTOP VIEW (>= 768px): Original 3-Column News Grid */}
             <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-8">
-              {newsItems.map((news) => (
+              {displayNews.map((news) => (
                 <Link
                   key={news.id}
                   href={`/news/${news.id}?from=${from}`}
@@ -125,15 +130,18 @@ export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
           </>
         )}
 
-        {/* View All News Button */}
-        <div className="text-center">
-          <Link
-            href="/news"
-            className="inline-flex items-center justify-center px-8 py-3.5 rounded-lg bg-[#03142A] hover:bg-[#072448] active:bg-[#020b18] text-white font-bold text-xs sm:text-sm uppercase tracking-widest transition-colors shadow-md border border-slate-700 min-h-[44px]"
-          >
-            View All News
-          </Link>
-        </div>
+        {/* View All News Button — only on the home page (the /news page already
+            shows the full list, so linking back to it would be circular) */}
+        {from === "home" && (
+          <div className="text-center">
+            <Link
+              href="/news"
+              className="inline-flex items-center justify-center px-8 py-3.5 rounded-lg bg-[#03142A] hover:bg-[#072448] active:bg-[#020b18] text-white font-bold text-xs sm:text-sm uppercase tracking-widest transition-colors shadow-md border border-slate-700 min-h-[44px]"
+            >
+              View All News
+            </Link>
+          </div>
+        )}
 
       </div>
     </section>

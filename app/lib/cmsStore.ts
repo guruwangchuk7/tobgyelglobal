@@ -680,25 +680,22 @@ export const saveCMSNews = (article: NewsArticleCMS): NewsArticleCMS => {
   }
   localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(updated));
 
-  if (isSupabaseConfigured()) {
-    const payload = {
-      id: article.id || `news-${Date.now()}`,
-      slug: article.slug || article.id,
-      title: article.title,
-      date: article.date,
-      category: article.category,
-      image: article.image,
-      excerpt: article.excerpt,
-      content: article.content,
-      media_contact_email: article.mediaContactEmail,
-      status: article.status,
-      featured_on_home: article.featuredOnHome,
-      updated_at: new Date().toISOString(),
-    };
-    supabase.from("cms_news").upsert([payload]).then(({ error }) => {
-      if (error) console.error("Error saving CMS news to Supabase:", error);
-    });
-  }
+  // Persist to the database via the authenticated admin endpoint (service-role,
+  // server-side). Anonymous clients can no longer write to cms_news directly.
+  const savedArticle = {
+    ...article,
+    id: article.id || `news-${Date.now()}`,
+    slug: article.slug || article.id,
+  };
+  fetch("/api/admin/cms-news", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(savedArticle),
+  })
+    .then((res) => {
+      if (!res.ok) console.error("Error saving CMS news:", res.status);
+    })
+    .catch((err) => console.error("Error saving CMS news:", err));
 
   return article;
 };

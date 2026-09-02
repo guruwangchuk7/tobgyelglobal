@@ -9,6 +9,7 @@ import { addVisitor, VisitorSubmission } from "@/app/lib/registrationStore";
 export default function RegisterVisitorPage() {
   const router = useRouter();
   const [submittedPass, setSubmittedPass] = useState<VisitorSubmission | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -16,7 +17,11 @@ export default function RegisterVisitorPage() {
     country: "Bhutan",
     profession: "",
     purpose: "B2B Networking & Trade Showcase",
-    daysAttending: ["Day 1 - Opening Ceremony & Expo", "Day 2 - B2B Summit"],
+    daysAttending: [
+      "Day 1 - Opening Ceremony & Expo Showcase",
+      "Day 2 - B2B Summit & Investment Forum",
+    ],
+    website: "", // honeypot — must stay empty for real users
   });
 
   const handleCheckboxChange = (day: string) => {
@@ -35,8 +40,17 @@ export default function RegisterVisitorPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newVisitor = await addVisitor(formData);
-    setSubmittedPass(newVisitor);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const newVisitor = await addVisitor(formData);
+      setSubmittedPass(newVisitor);
+    } catch (err) {
+      console.error(err);
+      alert("Sorry, your visitor pass could not be generated right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -131,6 +145,19 @@ export default function RegisterVisitorPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="hidden" aria-hidden="true">
+                <label>
+                  Website
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </label>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -261,10 +288,11 @@ export default function RegisterVisitorPage() {
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-6 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full py-3.5 px-6 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Ticket className="w-4 h-4" />
-                  <span>Generate Free Visitor Pass</span>
+                  <span>{submitting ? "Generating…" : "Generate Free Visitor Pass"}</span>
                 </button>
               </div>
 

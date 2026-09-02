@@ -15,6 +15,15 @@ export default function Globe({ className = "" }: { className?: string }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Gracefully degrade on environments without WebGL support (older browsers,
+    // hardware acceleration disabled, headless). Without this, cobe throws.
+    try {
+      const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+      if (!gl) return;
+    } catch {
+      return;
+    }
+
     const onResize = () => {
       if (canvas) {
         width = canvas.offsetWidth;
@@ -23,25 +32,32 @@ export default function Globe({ className = "" }: { className?: string }) {
     window.addEventListener("resize", onResize);
     onResize();
 
-    const globe = createGlobe(canvas, {
-      devicePixelRatio: 2,
-      width: width * 2,
-      height: width * 2,
-      phi: 4.7,
-      theta: 0.25,
-      dark: 1,
-      diffuse: 1.8,
-      mapSamples: 24000,
-      mapBrightness: 10,
-      baseColor: [0.1, 0.28, 0.55], // High-visibility bright slate blue
-      markerColor: [1.0, 0.75, 0.0], // Glowing Gold #EAA500
-      glowColor: [0.15, 0.45, 0.85], // Vibrant electric blue outer glow
-      markers: [
-        // REFINED SMALLER YELLOW DOT ON BHUTAN
-        { location: [27.5142, 90.4336], size: 0.07, color: [1.0, 0.75, 0.0] },
-      ],
-      arcs: [], // Zero extra endpoint dots anywhere else on Earth
-    });
+    let globe: ReturnType<typeof createGlobe>;
+    try {
+      globe = createGlobe(canvas, {
+        devicePixelRatio: 2,
+        width: width * 2,
+        height: width * 2,
+        phi: 4.7,
+        theta: 0.25,
+        dark: 1,
+        diffuse: 1.8,
+        mapSamples: 24000,
+        mapBrightness: 10,
+        baseColor: [0.1, 0.28, 0.55], // High-visibility bright slate blue
+        markerColor: [1.0, 0.75, 0.0], // Glowing Gold #EAA500
+        glowColor: [0.15, 0.45, 0.85], // Vibrant electric blue outer glow
+        markers: [
+          // REFINED SMALLER YELLOW DOT ON BHUTAN
+          { location: [27.5142, 90.4336], size: 0.07, color: [1.0, 0.75, 0.0] },
+        ],
+        arcs: [], // Zero extra endpoint dots anywhere else on Earth
+      });
+    } catch (err) {
+      console.error("Globe initialization failed:", err);
+      window.removeEventListener("resize", onResize);
+      return;
+    }
 
     const animate = () => {
       if (pointerInteracting.current === null) {

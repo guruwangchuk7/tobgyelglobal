@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
+import { notFound } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import BackButton from "../../components/BackButton";
@@ -22,6 +23,7 @@ export default function NewsDetailPage({
   const [article, setArticle] = useState<NewsArticleCMS | undefined>(
     () => INITIAL_NEWS.find((n) => n.id === id || n.slug === id)
   );
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     // Load local storage or DB data safely after mount
@@ -29,25 +31,18 @@ export default function NewsDetailPage({
     if (local) {
       setArticle(local);
     }
-    fetchCMSNewsAsync().then((newsList) => {
-      const found = newsList.find((n) => n.id === id || n.slug === id);
-      if (found) setArticle(found);
-    });
+    fetchCMSNewsAsync()
+      .then((newsList) => {
+        const found = newsList.find((n) => n.id === id || n.slug === id);
+        if (found) setArticle(found);
+      })
+      .finally(() => setLoaded(true));
   }, [id]);
 
   if (!article) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans">
-        <Header />
-        <main className="flex-1 py-16 text-center space-y-4">
-          <h1 className="text-2xl font-bold">News Article Not Found</h1>
-          <Link href="/news" className="text-[#0A4D8C] font-semibold underline">
-            Return to News Page
-          </Link>
-        </main>
-        <Footer />
-      </div>
-    );
+    // Once loading is complete and no article matched, render the real 404.
+    if (loaded) notFound();
+    return null;
   }
 
   const isFromHome = from === "home";

@@ -25,8 +25,12 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
     });
   }, []);
 
-  // Display only the 4 latest published events (latest first)
-  const displayEvents = events.slice(0, 4);
+  // On the home page: only events flagged featuredOnHome, capped at 4.
+  // On the /events page: every published event.
+  const displayEvents =
+    from === "home"
+      ? events.filter((e) => e.featuredOnHome).slice(0, 4)
+      : events;
 
   return (
     <section id="events" className="py-10 sm:py-18 bg-[#F8FAFC]">
@@ -149,15 +153,18 @@ export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps)
           </>
         )}
 
-        {/* View All Events Button */}
-        <div className="text-center pb-6 sm:pb-8">
-          <Link
-            href="/events"
-            className="inline-flex items-center justify-center px-7 py-3 rounded-md bg-[#03142A] hover:bg-[#072448] active:bg-[#020b18] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-colors shadow-md min-h-[44px]"
-          >
-            View All Events
-          </Link>
-        </div>
+        {/* View All Events Button — only on the home page (the /events page
+            already shows the full list, so linking back to it would be circular) */}
+        {from === "home" && (
+          <div className="text-center pb-6 sm:pb-8">
+            <Link
+              href="/events"
+              className="inline-flex items-center justify-center px-7 py-3 rounded-md bg-[#03142A] hover:bg-[#072448] active:bg-[#020b18] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-colors shadow-md min-h-[44px]"
+            >
+              View All Events
+            </Link>
+          </div>
+        )}
 
       </div>
 

@@ -1,10 +1,10 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { Shield, Lock, Eye, Database, UserCheck, Mail, CheckCircle2, FileText } from "lucide-react";
+import { Shield, Lock, Eye, Database, UserCheck, Mail, CheckCircle2, FileText, ExternalLink, HelpCircle, Bell } from "lucide-react";
 
 export const metadata = {
   title: "Privacy Policy | Tobgyel Global Expos",
-  description: "Official Privacy Policy for Tobgyel Global Expos. Learn how we collect, protect, use, and handle participant data, exhibitor information, and online transactions.",
+  description: "Official Privacy Policy for Tobgyel Global Expos. Learn how we collect, protect, use, store, and handle participant data, exhibitor information, and online transactions.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -12,64 +12,109 @@ export default function PrivacyPolicyPage() {
     {
       icon: Eye,
       title: "1. Information We Collect",
-      desc: "We collect personal and organization details necessary to deliver event management and exhibition services.",
+      desc: "Depending on how you use our website or participate in our events, we may collect:",
       points: [
-        "Personal Identifiers: Full name, designation, organization name, phone number, and official email address provided during event registration or inquiry.",
-        "Exhibitor & Participant Details: Passport/Voter ID numbers (for government entry clearance), passport photos, company profiles, and booth requirements.",
-        "Financial Transaction Data: Payment reference numbers, transaction receipts, and billing addresses (we do not store credit card details).",
-        "Technical Data: IP address, browser type, device information, and site interaction metrics via cookies and web analytics.",
+        "Name and designation",
+        "Company or organization name",
+        "Country and business location",
+        "Email address",
+        "Telephone / mobile number",
+        "Website or social media details",
+        "Exhibitor and sponsorship requirements",
+        "Visitor registration information",
+        "Event preferences and enquiries",
+        "Payment and transaction information where applicable",
+        "Information voluntarily provided through forms, applications or correspondence",
       ],
+      note: "Where necessary for event participation, travel coordination, venue security or regulatory requirements, additional identification information may be requested. We will explain the purpose of collecting such information at the time it is requested.",
     },
     {
       icon: Database,
       title: "2. How We Use Your Information",
-      desc: "Your data is used strictly for event administration, participant facilitation, and legal compliance.",
+      desc: "We may use collected information to:",
       points: [
-        "Processing exhibitor registrations, booth allocations, and visitor delegate passes.",
-        "Facilitating government liaison, border clearance, and entry permits with Bhutanese authorities (e.g., Department of Immigration, MoICE).",
-        "Sending official event updates, confirmation invoices, schedules, and administrative notices.",
-        "Improving website functionality, user experience, and security.",
-      ],
-    },
-    {
-      icon: Lock,
-      title: "3. Payment & Data Security",
-      desc: "We implement industry-standard security measures to safeguard all participant data and financial transactions.",
-      points: [
-        "All online payment transactions are processed through encrypted, bank-grade payment gateways.",
-        "We do not store complete payment card numbers or banking passwords on our local servers.",
-        "Access to participant databases is restricted to authorized Tobgyel Global Expos personnel and security-audited system administrators.",
-        "Regular data audits and SSL encryption protect user interactions on our portal.",
+        "Process visitor and exhibitor registrations",
+        "Communicate regarding events, applications and bookings",
+        "Provide exhibitor and sponsorship services",
+        "Process payments where applicable",
+        "Coordinate event logistics",
+        "Respond to enquiries",
+        "Provide event updates and announcements",
+        "Improve our website and services",
+        "Maintain records relating to participation",
+        "Prevent misuse, fraud or unauthorized activity",
+        "Comply with applicable legal and regulatory requirements",
       ],
     },
     {
       icon: UserCheck,
-      title: "4. Third-Party Sharing & Disclosure",
-      desc: "We respect your privacy and never sell or rent personal information to third-party marketers.",
+      title: "3. Sharing of Information",
+      desc: "We do not sell personal information for money.",
       points: [
-        "Statutory Authorities: Data may be shared with government agencies (Ministry of Industry, Commerce & Employment, Immigration, Customs) solely for official event approvals.",
-        "Service Partners: Official event contractors, venue management, and badge printing vendors bound by strict confidentiality agreements.",
-        "Legal Requirements: Disclosure required by law, court orders, or regulatory mandates under Bhutanese jurisdiction.",
+        "Service Providers & Partners: Information may be shared with service providers, payment processors, venue operators, event contractors, technology providers or relevant authorities where reasonably necessary to provide requested services, operate an event, process a transaction, maintain security or comply with applicable requirements.",
+        "Limited Disclosure: We will seek to limit information sharing to what is reasonably necessary for the relevant purpose.",
+      ],
+    },
+    {
+      icon: Bell,
+      title: "4. Marketing Communications",
+      desc: "Keeping you informed about event opportunities and announcements.",
+      points: [
+        "Where permitted and appropriate, we may use contact information to send information about our events, exhibitions, registration opportunities, announcements and related business activities.",
+        "You may request that we stop sending promotional communications at any time.",
+      ],
+    },
+    {
+      icon: Lock,
+      title: "5. Payment Information",
+      desc: "Secure handling of commercial and registration payments.",
+      points: [
+        "Third-Party Processing: Where online payments are offered, payment transactions may be processed through third-party payment providers.",
+        "Card Data Security: Tobgyel Global Expos does not intend to retain complete payment-card details unless this is necessary and lawfully permitted for the relevant service.",
+        "Provider Terms: Users should review the privacy and security terms of the payment provider used for their transaction.",
       ],
     },
     {
       icon: Shield,
-      title: "5. Cookies & Analytics",
-      desc: "Our website uses cookies to enhance user experience and analyze website traffic.",
+      title: "6. Data Security",
+      desc: "Protection measures for electronic data and communications.",
       points: [
-        "Essential Cookies: Required for navigation, security, and session management.",
-        "Analytics Cookies: Google Analytics helps us understand website visitor demographics and performance metrics.",
-        "Cookie Control: You can modify your browser settings to disable cookies, though some site functions may be limited.",
+        "We take reasonable administrative, technical and organizational measures to protect information against unauthorized access, loss, misuse, alteration or disclosure.",
+        "However, no internet transmission or electronic storage system can be guaranteed to be completely secure.",
+      ],
+    },
+    {
+      icon: ExternalLink,
+      title: "7. Third-Party Websites",
+      desc: "Independent third-party links and services.",
+      points: [
+        "Our website may contain links to websites operated by third parties, including sponsors, partners, hotels, travel providers, payment providers and other organizations.",
+        "We are not responsible for the privacy practices or content of third-party websites. Users should review the privacy policies of those websites separately.",
       ],
     },
     {
       icon: FileText,
-      title: "6. Data Retention & Your Rights",
-      desc: "You retain full control over your personal data submitted to Tobgyel Global Expos.",
+      title: "8. Data Retention",
+      desc: "Guidelines on how long we keep your information.",
       points: [
-        "Data Retention: We retain event participant data as required by commercial tax regulations and historical event archives.",
-        "Right to Access & Update: You may request a copy of your stored personal details or request updates at any time.",
-        "Opt-Out Rights: You can unsubscribe from marketing communications by following the unsubscribe link or contacting our support team.",
+        "We retain information for as long as reasonably necessary for the purposes for which it was collected, including event administration, accounting, legal, regulatory and business record requirements.",
+      ],
+    },
+    {
+      icon: HelpCircle,
+      title: "9. Your Requests",
+      desc: "Access, corrections, and communication preferences.",
+      points: [
+        "You may contact us to request information about personal information we hold about you, request correction of inaccurate information, or ask us to stop certain communications, subject to applicable legal and operational requirements.",
+      ],
+    },
+    {
+      icon: Bell,
+      title: "10. Changes to This Policy",
+      desc: "Updates to privacy terms and effective dates.",
+      points: [
+        "We may update this Privacy Policy when our services, website or legal requirements change.",
+        "The updated version will be published on this page with a revised “Last Updated” date.",
       ],
     },
   ];
@@ -90,7 +135,7 @@ export default function PrivacyPolicyPage() {
           </h1>
           <div className="w-12 h-1 bg-[#EAA500] rounded-full" />
           <p className="text-xs sm:text-base text-slate-300 max-w-3xl font-medium leading-relaxed">
-            Tobgyel Global Expos (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your privacy and ensuring the security of your personal and financial information when participating in our trade exhibitions and using our portal.
+            Tobgyel Global Expos (&quot;Tobgyel Global Expos&quot;, &quot;we&quot;, &quot;us&quot; or &quot;our&quot;) respects the privacy of visitors, exhibitors, sponsors, partners, speakers and other users of our website. This Privacy Policy explains how we collect, use, store and protect information provided through our website and event registration services.
           </p>
         </div>
       </section>
@@ -98,16 +143,16 @@ export default function PrivacyPolicyPage() {
       <main className="flex-1">
         {/* Main Content Grid */}
         <section className="py-10 sm:py-16 bg-slate-50 border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             <div className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm space-y-3">
               <h2 className="text-lg sm:text-xl font-bold text-[#03142A]">
-                Overview &amp; Policy Scope
+                Statement of Privacy Commitment
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-                This Privacy Policy outlines how Tobgyel Global Expos collects, uses, discloses, and protects your personal data when you visit <strong className="text-slate-900">www.tobgyelglobalxpos.com</strong>, register for trade expos, book exhibitor spaces, or contact our support team. By using our website or registering for our events, you agree to the collection and use of information in accordance with this policy.
+                Tobgyel Global Expos is dedicated to protecting personal information collected through our official portal, event applications, and visitor registrations. Please review the detailed sections below regarding our data handling principles.
               </p>
               <p className="text-xs text-slate-500 font-medium pt-1">
-                Last updated: August 2026 | Effective Date: August 2026
+                Last Updated: 1 September 2026
               </p>
             </div>
 
@@ -134,6 +179,11 @@ export default function PrivacyPolicyPage() {
                           </li>
                         ))}
                       </ul>
+                      {sec.note && (
+                        <div className="mt-3 p-3 bg-slate-50 border-l-4 border-[#EAA500] rounded-r text-xs text-slate-600 font-medium leading-relaxed">
+                          {sec.note}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -147,7 +197,7 @@ export default function PrivacyPolicyPage() {
                   Questions Regarding Our Privacy Practices?
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-                  If you have any questions about this Privacy Policy, wish to exercise your data rights, or need to update your registered information, please reach out to our Data Privacy Officer.
+                  If you have any questions about this Privacy Policy, wish to exercise your data rights, or need to update your registered information, please reach out to our team.
                 </p>
               </div>
               <a
@@ -155,7 +205,7 @@ export default function PrivacyPolicyPage() {
                 className="w-full md:w-auto px-6 py-3.5 rounded-lg bg-[#EAA500] hover:bg-[#c98e00] text-[#03142A] font-extrabold text-xs uppercase tracking-wider transition-colors shadow-md inline-flex items-center justify-center gap-2 shrink-0 min-h-[48px]"
               >
                 <Mail className="w-4 h-4" />
-                <span>Contact Privacy Officer</span>
+                <span>Contact Privacy Team</span>
               </a>
             </div>
 
@@ -167,3 +217,4 @@ export default function PrivacyPolicyPage() {
     </div>
   );
 }
+

@@ -1,87 +1,53 @@
+"use client";
+
+import { use, useState, useEffect } from "react";
+import { notFound } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import BackButton from "../../components/BackButton";
 import Link from "next/link";
 import { Calendar, MapPin, Sparkles, UserCheck, Ticket, Building, ShieldCheck } from "lucide-react";
-import { notFound } from "next/navigation";
+import { getCMSEventById, fetchCMSEventsAsync, TradeEventCMS, INITIAL_EVENTS } from "@/app/lib/cmsStore";
 
-export const metadata = {
-  title: "Event Details | Tobgyel Global Expos",
-  description: "Official event page, schedule, location, and registration for Tobgyel Global Expos trade fairs in Bhutan.",
-};
-
-const eventsDatabase = [
-  {
-    id: "1",
-    title: "BIN TRADE SHOWCASE 2027",
-    category: "Construction | Food | Tourism | Technology",
-    date: "May 20 – 23, 2027",
-    location: "Phuentsholing, Bhutan",
-    venue: "Phuentsholing International Expo Pavilion, Chhukha District, Bhutan",
-    image: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
-    description: "The premier international trade showcase connecting Himalayan and South Asian enterprises across construction, green technology, tourism, organic food processing, and logistics.",
-    highlights: [
-      "Over 300 international & regional trade exhibition booths",
-      "Dedicated B2B matchmaking lounges & investor summits",
-      "Official government delegation opening ceremony & ribbon cutting",
-      "Product launch pavilion, live machinery demos & networking dinners",
-    ],
-    sectors: [
-      "Building & Construction Materials",
-      "Organic Agriculture & Food Processing",
-      "Sustainable Eco-Tourism & Hospitality",
-      "Information Technology & Smart Solutions",
-      "Logistics & Heavy Machinery",
-    ],
-  },
-  {
-    id: "2",
-    title: "HIMALAYAN FOOD & CULTURE FESTIVAL",
-    category: "Celebrating Heritage, Food, Arts & Traditions",
-    date: "Oct 10 – 14, 2027",
-    location: "Thimphu, Bhutan",
-    venue: "Centenary Farmers Market & Expo Grounds, Thimphu, Bhutan",
-    image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80",
-    description: "A landmark cultural exhibition and culinary trade forum celebrating organic Himalayan food, traditional crafts, sustainable agriculture, and cultural heritage.",
-    highlights: [
-      "Organic food tasting & organic agriculture trade forums",
-      "Traditional Bhutanese handicrafts & handloom textile pavilions",
-      "Cultural performances & international media showcase",
-      "Culinary trade networking & regional export opportunities",
-    ],
-    sectors: [
-      "Organic Food & Beverages",
-      "Handicrafts & Cultural Artifacts",
-      "Traditional Herbal Products",
-      "Eco-Friendly Sustainable Goods",
-    ],
-  },
-];
-
-export function generateStaticParams() {
-  return eventsDatabase.map((item) => ({
-    id: item.id,
-  }));
-}
-
-export default async function EventDetailPage({
+export default function EventDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ from?: string }>;
 }) {
-  const { id } = await params;
-  const { from } = await searchParams;
-  const eventItem = eventsDatabase.find((e) => e.id === id);
+  const { id } = use(params);
+  const { from } = use(searchParams);
 
-  if (!eventItem) {
-    notFound();
-  }
+  // Initialize with server-safe initial seed data to prevent hydration mismatch
+  const [eventItem, setEventItem] = useState<TradeEventCMS | undefined>(
+    () => INITIAL_EVENTS.find((e) => e.id === id || e.slug === id)
+  );
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    // Load local storage or DB data safely after mount
+    const local = getCMSEventById(id);
+    if (local) {
+      setEventItem(local);
+    }
+    fetchCMSEventsAsync()
+      .then((eventsList) => {
+        const found = eventsList.find((e) => e.id === id || e.slug === id);
+        if (found) setEventItem(found);
+      })
+      .finally(() => setLoaded(true));
+  }, [id]);
 
   const isFromHome = from === "home";
   const backHref = isFromHome ? "/#events" : "/events";
   const backText = isFromHome ? "Back to Home" : "Back to All Events";
+
+  if (!eventItem) {
+    // Once loading is complete and no event matched, render the real 404.
+    if (loaded) notFound();
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans">
@@ -125,7 +91,7 @@ export default async function EventDetailPage({
       {/* Main Content */}
       <main className="flex-1 py-12 sm:py-16 bg-slate-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          
+
           <div className="bg-white p-6 sm:p-10 rounded-2xl border border-slate-200 shadow-md space-y-6 text-left">
             <div className="space-y-2">
               <h2 className="text-xl sm:text-2xl font-black text-[#03142A] uppercase">About The Event</h2>

@@ -9,6 +9,7 @@ import { addExhibitor } from "@/app/lib/registrationStore";
 export default function RegisterExhibitorPage() {
   const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     companyName: "",
     contactPerson: "",
@@ -17,12 +18,22 @@ export default function RegisterExhibitorPage() {
     sector: "Renewable Energy & Technology",
     boothSize: "Standard (3m x 3m)",
     description: "",
+    website: "", // honeypot — must stay empty for real users
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addExhibitor(formData);
-    setSubmitted(true);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await addExhibitor(formData);
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      alert("Sorry, your application could not be submitted right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -107,6 +118,19 @@ export default function RegisterExhibitorPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="hidden" aria-hidden="true">
+                <label>
+                  Website
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </label>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -232,10 +256,11 @@ export default function RegisterExhibitorPage() {
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-6 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full py-3.5 px-6 rounded-lg bg-[#0A4D8C] hover:bg-[#083e73] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Submit Exhibitor Application</span>
+                  <span>{submitting ? "Submitting…" : "Submit Exhibitor Application"}</span>
                 </button>
               </div>
 

@@ -9,6 +9,7 @@ import { addSponsor, SponsorSubmission } from "@/app/lib/registrationStore";
 export default function RegisterSponsorPage() {
   const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     organizationName: "",
     contactPerson: "",
@@ -17,12 +18,22 @@ export default function RegisterSponsorPage() {
     tier: "Gold ($5,000)" as SponsorSubmission["tier"],
     budget: "$5,000 - $10,000",
     message: "",
+    website: "", // honeypot — must stay empty for real users
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addSponsor(formData);
-    setSubmitted(true);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await addSponsor(formData);
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      alert("Sorry, your sponsorship request could not be submitted right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -102,6 +113,19 @@ export default function RegisterSponsorPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="hidden" aria-hidden="true">
+                <label>
+                  Website
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </label>
+              </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -219,10 +243,11 @@ export default function RegisterSponsorPage() {
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-6 rounded-lg bg-[#D49900] hover:bg-[#bd8800] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full py-3.5 px-6 rounded-lg bg-[#D49900] hover:bg-[#bd8800] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Submit Sponsorship Request</span>
+                  <span>{submitting ? "Submitting…" : "Submit Sponsorship Request"}</span>
                 </button>
               </div>
 
