@@ -3,7 +3,7 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Link from "next/link";
-import { CheckCircle2, Download, UserCheck, BarChart3, Globe2 } from "lucide-react";
+import { CheckCircle2, UserCheck, BarChart3, Globe2 } from "lucide-react";
 
 export default function ExhibitPage() {
   return (
@@ -108,15 +108,6 @@ export default function ExhibitPage() {
               >
                 Register As Exhibitor
               </Link>
-
-              <button
-                type="button"
-                onClick={() => alert("Downloading Tobgyel Global Expos Exhibitor Prospectus PDF...")}
-                className="w-full py-3 sm:py-3.5 px-6 rounded-lg border border-slate-600 hover:bg-slate-800 active:bg-slate-700 text-white font-bold text-xs sm:text-sm uppercase tracking-widest text-center flex items-center justify-center gap-2 transition-colors min-h-[44px]"
-              >
-                <Download className="w-4 h-4 text-[#EAA500]" />
-                <span>Download Prospectus (PDF)</span>
-              </button>
             </div>
           </div>
 
