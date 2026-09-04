@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/app/lib/supabaseAdmin";
 import { isHoneypotTripped } from "@/app/lib/spam";
+import { sendEmailNotification } from "@/app/lib/emailNotifier";
 
 export async function POST(request: Request) {
   try {
@@ -33,19 +34,40 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
     };
 
+    let insertedData = payload;
+
     if (isSupabaseAdminConfigured()) {
       const { data, error } = await supabaseAdmin.from("visitors").insert([payload]).select();
       if (error) {
         console.error("[SUPABASE VISITOR ERROR]", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      } else if (data && data[0]) {
+        insertedData = data[0];
       }
-      return NextResponse.json({ success: true, data: data[0] });
     }
+
+    // Send email notification to Gmail / info@tobgyelglobalxpos.com
+    await sendEmailNotification({
+      subject: `[New Visitor Pass Issued] ${fullName}`,
+      senderName: fullName,
+      senderEmail: email,
+      requestHeaders: request.headers,
+      data: {
+        "Form Type": "Trade Visitor Registration",
+        "Full Name": fullName,
+        "Email Address": email,
+        "Phone Number": phone,
+        "Country / Region": country,
+        "Profession / Industry": profession || "Visitor",
+        "Visit Purpose": purpose || "General Business",
+        "Days Attending": Array.isArray(daysAttending) ? daysAttending.join(", ") : (daysAttending || "Day 1"),
+        "Generated Visitor Pass Code": passCode,
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Visitor pass generated (Supabase env pending).",
-      data: payload,
+      message: "Visitor pass generated and email sent.",
+      data: insertedData,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -54,3 +76,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

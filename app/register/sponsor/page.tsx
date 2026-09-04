@@ -15,8 +15,8 @@ export default function RegisterSponsorPage() {
     contactPerson: "",
     email: "",
     phone: "",
-    tier: "Gold ($5,000)" as SponsorSubmission["tier"],
-    budget: "$5,000 - $10,000",
+    tier: "Gold ($2,500)" as SponsorSubmission["tier"],
+    budget: "$500 - $2,500",
     message: "",
     website: "", // honeypot — must stay empty for real users
   });
@@ -42,7 +42,7 @@ export default function RegisterSponsorPage() {
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#D49900]/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-2xl w-full relative z-10">
-        
+
         {/* Back Link */}
         <Link
           href="/"
@@ -100,7 +100,7 @@ export default function RegisterSponsorPage() {
           </div>
         ) : (
           <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8">
-            
+
             {/* Header */}
             <div className="border-b border-slate-800 pb-6 space-y-2">
               <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight font-sans">
@@ -126,7 +126,7 @@ export default function RegisterSponsorPage() {
                   />
                 </label>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
@@ -187,7 +187,7 @@ export default function RegisterSponsorPage() {
                     <input
                       type="tel"
                       required
-                      placeholder="+975 2 333 111"
+                      placeholder="+975 17933882"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-[#EAA500]"
@@ -206,9 +206,9 @@ export default function RegisterSponsorPage() {
                     onChange={(e) => setFormData({ ...formData, tier: e.target.value as SponsorSubmission["tier"] })}
                     className="w-full px-4 py-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-white text-xs sm:text-sm focus:outline-none focus:border-[#EAA500]"
                   >
-                    <option value="Platinum ($10,000)">Platinum ($10,000)</option>
-                    <option value="Gold ($5,000)">Gold ($5,000)</option>
-                    <option value="Silver ($2,500)">Silver ($2,500)</option>
+                    <option value="Gold ($2,500)">Gold ($2,500)</option>
+                    <option value="Silver ($1,500)">Silver ($1,500)</option>
+                    <option value="Bronze ($500)">Bronze ($500)</option>
                     <option value="Official Partner">Official Partner</option>
                   </select>
                 </div>
@@ -219,7 +219,7 @@ export default function RegisterSponsorPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. $10,000"
+                    placeholder="e.g. $500 - $2,500"
                     value={formData.budget}
                     onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-[#EAA500]"

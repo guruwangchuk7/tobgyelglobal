@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Users, User, Mail, Phone, Globe, CheckCircle2, ArrowLeft, QrCode, Ticket } from "lucide-react";
+import { User, Mail, Phone, Globe, ArrowLeft, Ticket } from "lucide-react";
 import { addVisitor, VisitorSubmission } from "@/app/lib/registrationStore";
+import VisitorTicketPass from "@/app/components/VisitorTicketPass";
 
 export default function RegisterVisitorPage() {
   const router = useRouter();
@@ -17,26 +18,9 @@ export default function RegisterVisitorPage() {
     country: "Bhutan",
     profession: "",
     purpose: "B2B Networking & Trade Showcase",
-    daysAttending: [
-      "Day 1 - Opening Ceremony & Expo Showcase",
-      "Day 2 - B2B Summit & Investment Forum",
-    ],
+    daysAttending: ["All Expo Days"],
     website: "", // honeypot — must stay empty for real users
   });
-
-  const handleCheckboxChange = (day: string) => {
-    if (formData.daysAttending.includes(day)) {
-      setFormData({
-        ...formData,
-        daysAttending: formData.daysAttending.filter((d) => d !== day),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        daysAttending: [...formData.daysAttending, day],
-      });
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,75 +42,45 @@ export default function RegisterVisitorPage() {
       {/* Background Accent Gradients */}
       <div className="absolute top-0 left-1/3 w-96 h-96 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-2xl w-full relative z-10">
+      <div className={`${submittedPass ? "max-w-5xl" : "max-w-2xl"} w-full relative z-10 transition-all duration-300`}>
         
         {/* Back Link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-xs sm:text-sm text-slate-300 hover:text-[#EAA500] font-semibold mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
-        </Link>
+        <div className="no-print">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm text-slate-300 hover:text-[#EAA500] font-semibold mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
 
         {submittedPass ? (
-          <div className="bg-[#03142A] border border-emerald-500/40 rounded-2xl p-6 sm:p-10 text-center space-y-6 shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/50">
-              <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
-            </div>
-            
-            <div className="space-y-2">
+          <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl text-center space-y-6">
+            <div className="space-y-2 no-print">
+              <span className="text-xs font-black uppercase tracking-widest text-[#EAA500]">
+                Registration Successful
+              </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wide font-sans">
-                Digital Entry Pass Issued!
+                Official Trade Pass Generated!
               </h2>
-              <p className="text-sm text-slate-300 max-w-md mx-auto">
-                Your visitor registration is confirmed. Present your pass code or QR badge at the Phuentsholing Expo Registration Counter.
+              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
+                Your entry ticket has been issued. Download or print your pass below, or present your Pass Code ID at the entrance gate.
               </p>
             </div>
 
-            {/* Pass Preview Card */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#06244a] to-[#020d1c] border-2 border-emerald-500/60 shadow-xl text-left space-y-4 relative overflow-hidden max-w-md mx-auto">
-              <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
-                <div className="flex items-center gap-2">
-                  <Ticket className="w-5 h-5 text-emerald-400" />
-                  <span className="text-xs font-black uppercase tracking-widest text-emerald-400">
-                    Official Visitor Badge
-                  </span>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase">
-                  CONFIRMED
-                </span>
-              </div>
+            {/* Official Ticket Pass */}
+            <VisitorTicketPass
+              visitor={submittedPass}
+              onClose={() => setSubmittedPass(null)}
+            />
 
-              <div className="space-y-2">
-                <h3 className="text-lg font-black text-white">{submittedPass.fullName}</h3>
-                <p className="text-xs text-slate-300">{submittedPass.profession || "Delegate Visitor"} • {submittedPass.country}</p>
-                <p className="text-xs text-slate-400">{submittedPass.email}</p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-widest block">PASS ID CODE</span>
-                  <span className="text-sm font-mono font-bold text-[#EAA500]">{submittedPass.passCode}</span>
-                </div>
-                <div className="p-2 rounded bg-white text-slate-900 flex items-center justify-center">
-                  <QrCode className="w-8 h-8" />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setSubmittedPass(null)}
-                className="px-6 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold uppercase tracking-wider text-slate-200"
-              >
-                Register Another Visitor
-              </button>
+            <div className="no-print pt-2">
               <button
                 onClick={() => router.push("/")}
-                className="px-6 py-2.5 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-xs font-bold uppercase tracking-wider text-white"
+                className="px-6 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold uppercase tracking-wider text-slate-300 transition-colors"
               >
-                Return to Website
+                Return to Home Website
               </button>
             </div>
           </div>
@@ -205,7 +159,7 @@ export default function RegisterVisitorPage() {
                     <input
                       type="tel"
                       required
-                      placeholder="+975 17 000 000"
+                      placeholder="+975 17933882"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500"
@@ -262,34 +216,11 @@ export default function RegisterVisitorPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-2">
-                  Select Days Attending *
-                </label>
-                <div className="space-y-2 text-xs">
-                  {[
-                    "Day 1 - Opening Ceremony & Expo Showcase",
-                    "Day 2 - B2B Summit & Investment Forum",
-                    "Day 3 - Cultural Exhibition & Product Launch",
-                  ].map((day) => (
-                    <label key={day} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.daysAttending.includes(day)}
-                        onChange={() => handleCheckboxChange(day)}
-                        className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 w-4 h-4"
-                      />
-                      <span>{day}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
               <div className="pt-3">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3.5 px-6 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 px-6 rounded-lg bg-[#008E48] hover:bg-[#00773d] text-white font-extrabold text-xs sm:text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <Ticket className="w-4 h-4" />
                   <span>{submitting ? "Generating…" : "Generate Free Visitor Pass"}</span>

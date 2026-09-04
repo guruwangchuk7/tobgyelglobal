@@ -392,7 +392,7 @@ export const INITIAL_CONTACT: ContactConfigCMS = {
   workingHours: "Monday – Saturday: 9:00 AM – 6:00 PM (BTT)",
   mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14197.68305741639!2d89.3800!3d26.8600!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39e4468f77341e3d%3A0x6b44f2d34a5d8b!2sPhuentsholing%2C%20Bhutan!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s",
   socialLinks: {
-    facebook: "https://facebook.com",
+    facebook: "https://www.facebook.com/tobgyelevnts.bhutan/",
     twitter: "https://twitter.com",
     instagram: "https://instagram.com",
     linkedin: "https://linkedin.com",

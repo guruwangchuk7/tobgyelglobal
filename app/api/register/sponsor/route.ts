@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/app/lib/supabaseAdmin";
 import { isHoneypotTripped } from "@/app/lib/spam";
+import { sendEmailNotification } from "@/app/lib/emailNotifier";
 
 export async function POST(request: Request) {
   try {
@@ -30,19 +31,39 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
     };
 
+    let insertedData = payload;
+
     if (isSupabaseAdminConfigured()) {
       const { data, error } = await supabaseAdmin.from("sponsors").insert([payload]).select();
       if (error) {
         console.error("[SUPABASE SPONSOR ERROR]", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      } else if (data && data[0]) {
+        insertedData = data[0];
       }
-      return NextResponse.json({ success: true, data: data[0] });
     }
+
+    // Send email notification to Gmail / info@tobgyelglobalxpos.com
+    await sendEmailNotification({
+      subject: `[New Sponsorship Request] ${organizationName}`,
+      senderName: contactPerson,
+      senderEmail: email,
+      requestHeaders: request.headers,
+      data: {
+        "Form Type": "Sponsor Registration",
+        "Organization Name": organizationName,
+        "Contact Person": contactPerson,
+        "Email Address": email,
+        "Phone Number": phone,
+        "Sponsorship Tier": tier || "Official Partner",
+        "Estimated Budget": budget || "N/A",
+        "Goals / Comments": message || "N/A",
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Sponsor application recorded (Supabase env pending).",
-      data: payload,
+      message: "Sponsorship request submitted and email sent.",
+      data: insertedData,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -51,3 +72,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

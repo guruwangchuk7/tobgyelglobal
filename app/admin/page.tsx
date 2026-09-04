@@ -44,8 +44,10 @@ import {
   Share2,
   Monitor,
   Tablet,
-  Smartphone
+  Smartphone,
+  Ticket
 } from "lucide-react";
+import VisitorTicketPass from "@/app/components/VisitorTicketPass";
 
 import {
   getExhibitors,
@@ -161,6 +163,7 @@ export default function AdminPage() {
   const [editingEvent, setEditingEvent] = useState<Partial<TradeEventCMS> | null>(null);
   const [editingNews, setEditingNews] = useState<Partial<NewsArticleCMS> | null>(null);
   const [editingAd, setEditingAd] = useState<Partial<ProductAdCMS> | null>(null);
+  const [viewingVisitorTicket, setViewingVisitorTicket] = useState<VisitorSubmission | null>(null);
 
   // Editor Tabs ("details" | "seo" | "settings")
   const [editorTab, setEditorTab] = useState<"details" | "seo" | "settings">("details");
@@ -2768,6 +2771,13 @@ export default function AdminPage() {
                             <td className="py-3.5 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
+                                  onClick={() => setViewingVisitorTicket(vis)}
+                                  className="px-2.5 py-1 rounded bg-[#0A4D8C]/40 hover:bg-[#0A4D8C] text-[#EAA500] font-bold text-[10px] uppercase flex items-center gap-1 border border-[#0A4D8C]"
+                                >
+                                  <Ticket className="w-3 h-3 text-[#EAA500]" />
+                                  <span>View Ticket</span>
+                                </button>
+                                <button
                                   onClick={() => handleVisitorStatus(vis.id, "Approved")}
                                   className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
                                 >
@@ -2796,6 +2806,35 @@ export default function AdminPage() {
             )}
 
           </main>
+        </div>
+      )}
+
+      {/* Visitor Ticket Pass Modal for Admin */}
+      {viewingVisitorTicket && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#03142A] border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-5xl w-full relative space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 no-print">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#EAA500] tracking-widest block">
+                  Admin Pass Inspection &amp; Print
+                </span>
+                <h3 className="text-xl font-black text-white">
+                  Visitor Pass — {viewingVisitorTicket.fullName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setViewingVisitorTicket(null)}
+                className="p-2 rounded-xl bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <VisitorTicketPass
+              visitor={viewingVisitorTicket}
+              onClose={() => setViewingVisitorTicket(null)}
+            />
+          </div>
         </div>
       )}
 

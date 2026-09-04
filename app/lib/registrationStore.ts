@@ -20,7 +20,7 @@ export interface SponsorSubmission {
   contactPerson: string;
   email: string;
   phone: string;
-  tier: "Platinum ($10,000)" | "Gold ($5,000)" | "Silver ($2,500)" | "Official Partner";
+  tier: "Gold ($2,500)" | "Silver ($1,500)" | "Bronze ($500)" | "Official Partner" | string;
   budget: string;
   message: string;
   status: "Pending" | "Approved" | "Rejected";

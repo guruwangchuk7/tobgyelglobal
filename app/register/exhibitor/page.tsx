@@ -43,7 +43,7 @@ export default function RegisterExhibitorPage() {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#EAA500]/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-2xl w-full relative z-10">
-        
+
         {/* Back Link */}
         <Link
           href="/"
@@ -105,7 +105,7 @@ export default function RegisterExhibitorPage() {
           </div>
         ) : (
           <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8">
-            
+
             {/* Header */}
             <div className="border-b border-slate-800 pb-6 space-y-2">
               <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight font-sans">
@@ -131,7 +131,7 @@ export default function RegisterExhibitorPage() {
                   />
                 </label>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-1.5">
@@ -195,7 +195,7 @@ export default function RegisterExhibitorPage() {
                     <input
                       type="tel"
                       required
-                      placeholder="+975 17 000 000"
+                      placeholder="+975 17933882"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-[#EAA500] focus:ring-1 focus:ring-[#EAA500]"

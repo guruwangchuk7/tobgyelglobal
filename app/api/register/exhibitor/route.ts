@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/app/lib/supabaseAdmin";
 import { isHoneypotTripped } from "@/app/lib/spam";
+import { sendEmailNotification } from "@/app/lib/emailNotifier";
 
 export async function POST(request: Request) {
   try {
@@ -30,20 +31,39 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
     };
 
+    let insertedData = payload;
+
     if (isSupabaseAdminConfigured()) {
       const { data, error } = await supabaseAdmin.from("exhibitors").insert([payload]).select();
       if (error) {
         console.error("[SUPABASE EXHIBITOR ERROR]", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      } else if (data && data[0]) {
+        insertedData = data[0];
       }
-      return NextResponse.json({ success: true, data: data[0] });
     }
 
-    // Fallback response when Supabase credentials are not set up yet
+    // Send email notification to Gmail / info@tobgyelglobalxpos.com
+    await sendEmailNotification({
+      subject: `[New Exhibitor Application] ${companyName}`,
+      senderName: contactPerson,
+      senderEmail: email,
+      requestHeaders: request.headers,
+      data: {
+        "Form Type": "Exhibitor Registration",
+        "Company Name": companyName,
+        "Contact Person": contactPerson,
+        "Email Address": email,
+        "Phone Number": phone,
+        "Industry Sector": sector || "General",
+        "Booth Size": boothSize || "Standard (3m x 3m)",
+        "Company Description / Products": description || "N/A",
+      },
+    });
+
     return NextResponse.json({
       success: true,
-      message: "Exhibitor application recorded (Supabase env pending).",
-      data: payload,
+      message: "Exhibitor application submitted and email sent.",
+      data: insertedData,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -52,3 +72,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

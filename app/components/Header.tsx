@@ -69,8 +69,8 @@ export default function Header() {
                   key={link.name}
                   href={link.href}
                   className={`text-xs xl:text-sm font-bold tracking-widest transition-colors py-2 relative ${isActive
-                      ? "text-[#EAA500] border-b-2 border-[#EAA500]"
-                      : "text-white hover:text-[#EAA500]"
+                    ? "text-[#EAA500] border-b-2 border-[#EAA500]"
+                    : "text-white hover:text-[#EAA500]"
                     }`}
                 >
                   {link.name}
@@ -117,8 +117,8 @@ export default function Header() {
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`block px-4 py-3.5 rounded-lg text-sm font-extrabold tracking-widest transition-colors min-h-[48px] flex items-center ${isActive
-                      ? "bg-[#0a2347] text-[#EAA500] border-l-4 border-[#EAA500]"
-                      : "text-white hover:bg-slate-800/80 active:bg-slate-800"
+                    ? "bg-[#0a2347] text-[#EAA500] border-l-4 border-[#EAA500]"
+                    : "text-white hover:bg-slate-800/80 active:bg-slate-800"
                     }`}
                 >
                   {link.name}
