@@ -146,8 +146,12 @@ export default function AdminPage() {
   const [visitors, setVisitors] = useState<VisitorSubmission[]>([]);
 
   // CMS Content State
-  const [cmsEvents, setCmsEvents] = useState<TradeEventCMS[]>([]);
-  const [cmsNews, setCmsNews] = useState<NewsArticleCMS[]>([]);
+  const [cmsEvents, setCmsEvents] = useState<TradeEventCMS[]>(() => {
+    return typeof window !== "undefined" ? getCMSEvents() : INITIAL_EVENTS;
+  });
+  const [cmsNews, setCmsNews] = useState<NewsArticleCMS[]>(() => {
+    return typeof window !== "undefined" ? getCMSNews() : INITIAL_NEWS;
+  });
   const [productAds, setProductAds] = useState<ProductAdCMS[]>([]);
   const [pageViews, setPageViews] = useState<number>(3840);
   const [heroConfig, setHeroConfig] = useState<HeroConfigCMS | null>(null);
@@ -193,6 +197,8 @@ export default function AdminPage() {
     setExhibitors(getExhibitors());
     setSponsors(getSponsors());
     setVisitors(getVisitors());
+    setCmsEvents(getCMSEvents());
+    setCmsNews(getCMSNews());
 
     const exh = await fetchExhibitorsAsync();
     const sp = await fetchSponsorsAsync();
@@ -203,8 +209,8 @@ export default function AdminPage() {
 
     const evts = await fetchCMSEventsAsync();
     const news = await fetchCMSNewsAsync();
-    setCmsEvents(evts);
-    setCmsNews(news);
+    setCmsEvents(Array.isArray(evts) && evts.length > 0 ? evts : getCMSEvents());
+    setCmsNews(Array.isArray(news) && news.length > 0 ? news : getCMSNews());
     setProductAds(getCMSProductAds());
     setPageViews(getPageViewCount());
     setHeroConfig(getCMSHeroConfig());
@@ -254,42 +260,50 @@ export default function AdminPage() {
     setEditingAd(null);
     setIsDirty(false);
     setSaveSuccessMsg("");
+    setStatusFilter("All");
+    setSearchQuery("");
   };
 
   // Submissions Actions
-  const handleExhibitorStatus = (id: string, status: "Pending" | "Approved" | "Rejected") => {
-    updateExhibitorStatus(id, status);
-    refreshData();
+  const handleExhibitorStatus = async (id: string, status: "Pending" | "Approved" | "Rejected") => {
+    setExhibitors((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
+    await updateExhibitorStatus(id, status);
+    await refreshData();
   };
 
-  const handleDeleteExhibitor = (id: string) => {
+  const handleDeleteExhibitor = async (id: string) => {
     if (confirm("Are you sure you want to delete this exhibitor entry?")) {
-      deleteExhibitor(id);
-      refreshData();
+      setExhibitors((prev) => prev.filter((e) => e.id !== id));
+      await deleteExhibitor(id);
+      await refreshData();
     }
   };
 
-  const handleSponsorStatus = (id: string, status: "Pending" | "Approved" | "Rejected") => {
-    updateSponsorStatus(id, status);
-    refreshData();
+  const handleSponsorStatus = async (id: string, status: "Pending" | "Approved" | "Rejected") => {
+    setSponsors((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+    await updateSponsorStatus(id, status);
+    await refreshData();
   };
 
-  const handleDeleteSponsor = (id: string) => {
+  const handleDeleteSponsor = async (id: string) => {
     if (confirm("Are you sure you want to delete this sponsor entry?")) {
-      deleteSponsor(id);
-      refreshData();
+      setSponsors((prev) => prev.filter((s) => s.id !== id));
+      await deleteSponsor(id);
+      await refreshData();
     }
   };
 
-  const handleVisitorStatus = (id: string, status: "Pending" | "Approved" | "Rejected") => {
-    updateVisitorStatus(id, status);
-    refreshData();
+  const handleVisitorStatus = async (id: string, status: "Pending" | "Approved" | "Rejected") => {
+    setVisitors((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v)));
+    await updateVisitorStatus(id, status);
+    await refreshData();
   };
 
-  const handleDeleteVisitor = (id: string) => {
+  const handleDeleteVisitor = async (id: string) => {
     if (confirm("Are you sure you want to delete this visitor pass entry?")) {
-      deleteVisitor(id);
-      refreshData();
+      setVisitors((prev) => prev.filter((v) => v.id !== id));
+      await deleteVisitor(id);
+      await refreshData();
     }
   };
 
@@ -529,14 +543,24 @@ export default function AdminPage() {
 
   // Filtered CMS Items
   const filteredEvents = cmsEvents.filter((evt) => {
-    const matchesSearch = evt.title.toLowerCase().includes(searchQuery.toLowerCase()) || evt.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "All" || evt.status === statusFilter;
+    const matchesSearch =
+      !searchQuery ||
+      evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      evt.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const validEventStatuses = ["Published", "Draft"];
+    const matchesStatus =
+      statusFilter === "All" || !validEventStatuses.includes(statusFilter) || evt.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const filteredNews = cmsNews.filter((news) => {
-    const matchesSearch = news.title.toLowerCase().includes(searchQuery.toLowerCase()) || news.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "All" || news.status === statusFilter;
+    const matchesSearch =
+      !searchQuery ||
+      news.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      news.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const validNewsStatuses = ["Published", "Draft"];
+    const matchesStatus =
+      statusFilter === "All" || !validNewsStatuses.includes(statusFilter) || news.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -1185,7 +1209,23 @@ export default function AdminPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredEvents.map((evt) => (
+                      {filteredEvents.length === 0 ? (
+                        <div className="col-span-full text-center py-12 px-4 bg-slate-900/50 border border-slate-800 rounded-xl space-y-3">
+                          <Calendar className="w-8 h-8 text-[#EAA500] mx-auto opacity-75" />
+                          <p className="text-sm font-bold text-slate-300">No trade events found matching your criteria</p>
+                          <button
+                            onClick={() => {
+                              setStatusFilter("All");
+                              setSearchQuery("");
+                              setCmsEvents(getCMSEvents());
+                            }}
+                            className="text-xs text-[#EAA500] underline hover:text-[#f5be42] font-semibold"
+                          >
+                            Reset filters &amp; Reload Events
+                          </button>
+                        </div>
+                      ) : (
+                        filteredEvents.map((evt) => (
                         <div
                           key={evt.id}
                           className="bg-[#03142A] border border-slate-800 rounded-xl overflow-hidden shadow-lg flex flex-col justify-between hover:border-slate-700 transition-all group"
@@ -1239,7 +1279,7 @@ export default function AdminPage() {
                             </div>
                           </div>
                         </div>
-                      ))}
+                      )))}
                     </div>
                   </div>
                 ) : (
@@ -2602,6 +2642,7 @@ export default function AdminPage() {
                     <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                     <input
                       type="text"
+                      autoComplete="off"
                       placeholder="Search submissions..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -2612,6 +2653,7 @@ export default function AdminPage() {
                     {["All", "Pending", "Approved", "Rejected"].map((tab) => (
                       <button
                         key={tab}
+                        type="button"
                         onClick={() => setStatusFilter(tab)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === tab
                             ? "bg-[#0A4D8C] text-white shadow"
@@ -2667,18 +2709,21 @@ export default function AdminPage() {
                             <td className="py-3.5 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
+                                  type="button"
                                   onClick={() => handleExhibitorStatus(exh.id, "Approved")}
                                   className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
                                 >
                                   Approve
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleExhibitorStatus(exh.id, "Rejected")}
                                   className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
                                 >
                                   Reject
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleDeleteExhibitor(exh.id)}
                                   className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
                                 >
@@ -2719,18 +2764,21 @@ export default function AdminPage() {
                             <td className="py-3.5 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
+                                  type="button"
                                   onClick={() => handleSponsorStatus(sp.id, "Approved")}
                                   className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
                                 >
                                   Approve
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleSponsorStatus(sp.id, "Rejected")}
                                   className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
                                 >
                                   Reject
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleDeleteSponsor(sp.id)}
                                   className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
                                 >
@@ -2771,6 +2819,7 @@ export default function AdminPage() {
                             <td className="py-3.5 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
+                                  type="button"
                                   onClick={() => setViewingVisitorTicket(vis)}
                                   className="px-2.5 py-1 rounded bg-[#0A4D8C]/40 hover:bg-[#0A4D8C] text-[#EAA500] font-bold text-[10px] uppercase flex items-center gap-1 border border-[#0A4D8C]"
                                 >
@@ -2778,18 +2827,21 @@ export default function AdminPage() {
                                   <span>View Ticket</span>
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleVisitorStatus(vis.id, "Approved")}
                                   className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
                                 >
                                   Approve
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleVisitorStatus(vis.id, "Rejected")}
                                   className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
                                 >
                                   Reject
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleDeleteVisitor(vis.id)}
                                   className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
                                 >

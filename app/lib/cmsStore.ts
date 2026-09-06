@@ -310,42 +310,6 @@ export const INITIAL_NEWS: NewsArticleCMS[] = [
     featuredOnHome: true,
     updatedAt: new Date().toLocaleDateString(),
   },
-  {
-    id: "2",
-    slug: "new-international-partnerships-announced",
-    title: "New International Partnerships Announced",
-    date: "May 10, 2024",
-    category: "Global Alliances | Economic Growth",
-    image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Tobgyel Global Expos formalizes strategic alliances with regional chambers of commerce and international trade federations.",
-    content: [
-      "Tobgyel Global Expos has formalized strategic partnerships with regional commerce chambers, including the Bhutan Chamber of Commerce & Industry (BCCI) and South Asian trade federations.",
-      "These bilateral agreements facilitate expedited visa processing for foreign delegates, tax exemption assistance for exhibition display samples, and dedicated transport logistics via Drukair and Bhutan Airlines.",
-      "By establishing direct connections between international investors and domestic Bhutanese entrepreneurs, Tobgyel Global Expos continues to position Bhutan as a sustainable trade nexus in South Asia.",
-    ],
-    mediaContactEmail: "info@tobgyelglobalxpos.com",
-    status: "Published",
-    featuredOnHome: true,
-    updatedAt: new Date().toLocaleDateString(),
-  },
-  {
-    id: "3",
-    slug: "bhutan-next-hub-business-investment",
-    title: "Bhutan: The Next Hub for Business & Investment",
-    date: "May 5, 2024",
-    category: "Market Insights | Investment",
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Strategic trade infrastructure and eco-conscious policies position Bhutan as a prime destination for sustainable investments.",
-    content: [
-      "Positioned strategically at the crossroads of South and East Asia, Bhutan is rapidly expanding its sustainable trade infrastructure.",
-      "With the visionary development of the Gelephu Mindful City Special Administrative Region (SAR) and the Phuentsholing dry port expansion, international investors have unprecedented access to renewable energy projects, organic agribusiness, eco-tourism, and digital technology ventures.",
-      "Tobgyel Global Expos provides the ideal platform for foreign companies to gain first-mover advantage in Bhutan's high-growth green economy.",
-    ],
-    mediaContactEmail: "info@tobgyelglobalxpos.com",
-    status: "Published",
-    featuredOnHome: true,
-    updatedAt: new Date().toLocaleDateString(),
-  },
 ];
 
 export const INITIAL_HERO: HeroConfigCMS = {
@@ -455,12 +419,13 @@ export const unmarkIdAsDeleted = (key: string, id: string) => {
 };
 
 export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
+  unmarkIdAsDeleted(DELETED_KEYS.EVENTS, "himalayan-food-trade-innovation-expo-2026");
   const deletedIds = getDeletedIds(DELETED_KEYS.EVENTS);
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase.from("cms_events").select("*").order("updated_at", { ascending: false });
-      if (!error && data) {
-        const fetched: TradeEventCMS[] = data
+      if (!error && Array.isArray(data)) {
+        let fetched: TradeEventCMS[] = data
           .map((d: any) => ({
             id: d.id,
             slug: d.slug,
@@ -479,6 +444,32 @@ export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
           }))
           .filter((e) => !deletedIds.includes(e.id) && !deletedIds.includes(e.slug));
 
+        // Always ensure seed INITIAL_EVENTS exist if not explicitly deleted
+        const missingInitial = INITIAL_EVENTS.filter(
+          (ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug) && !fetched.some((e) => e.id === ie.id || e.slug === ie.slug)
+        );
+        if (missingInitial.length > 0) {
+          fetched = [...fetched, ...missingInitial];
+        }
+
+        if (fetched.length === 0) {
+          fetched = INITIAL_EVENTS.filter((ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug));
+        }
+
+        // Ensure target expo venue and image stay up to date
+        fetched = fetched.map((e) => {
+          if (e.id === "himalayan-food-trade-innovation-expo-2026") {
+            return {
+              ...e,
+              image: "/himalayan-food-trade-innovation-expo.png",
+              venue: e.venue && e.venue.includes("Samtse International Exhibition Ground")
+                ? "Samtse, Bhutan (Awaiting Venue Confirmation)"
+                : e.venue || "Samtse, Bhutan (Awaiting Venue Confirmation)",
+            };
+          }
+          return e;
+        });
+
         if (typeof window !== "undefined") {
           localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(fetched));
         }
@@ -493,28 +484,48 @@ export const fetchCMSEventsAsync = async (): Promise<TradeEventCMS[]> => {
 
 export const getCMSEvents = (): TradeEventCMS[] => {
   if (typeof window === "undefined") return INITIAL_EVENTS;
+  unmarkIdAsDeleted(DELETED_KEYS.EVENTS, "himalayan-food-trade-innovation-expo-2026");
   const deletedIds = getDeletedIds(DELETED_KEYS.EVENTS);
   const stored = localStorage.getItem(CMS_KEYS.EVENTS);
 
-  let parsed: TradeEventCMS[];
-  if (!stored) {
-    parsed = INITIAL_EVENTS;
-  } else {
-    parsed = JSON.parse(stored);
+  let parsed: TradeEventCMS[] = [];
+  if (stored) {
+    try {
+      const p = JSON.parse(stored);
+      if (Array.isArray(p)) parsed = p;
+    } catch {
+      parsed = [];
+    }
   }
 
   parsed = parsed.filter((e) => !deletedIds.includes(e.id) && !deletedIds.includes(e.slug));
 
-  if (!stored) {
-    const missingInitial = INITIAL_EVENTS.filter(
-      (ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug) && !parsed.some((e) => e.id === ie.id || e.slug === ie.slug)
-    );
-    if (missingInitial.length > 0) {
-      parsed = [...parsed, ...missingInitial];
-    }
-    localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(parsed));
+  const missingInitial = INITIAL_EVENTS.filter(
+    (ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug) && !parsed.some((e) => e.id === ie.id || e.slug === ie.slug)
+  );
+  if (missingInitial.length > 0) {
+    parsed = [...parsed, ...missingInitial];
   }
 
+  if (parsed.length === 0) {
+    parsed = INITIAL_EVENTS.filter((ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug));
+  }
+
+  // Ensure target expo venue and image stay up to date
+  parsed = parsed.map((e) => {
+    if (e.id === "himalayan-food-trade-innovation-expo-2026") {
+      return {
+        ...e,
+        image: "/himalayan-food-trade-innovation-expo.png",
+        venue: e.venue && e.venue.includes("Samtse International Exhibition Ground")
+          ? "Samtse, Bhutan (Awaiting Venue Confirmation)"
+          : e.venue || "Samtse, Bhutan (Awaiting Venue Confirmation)",
+      };
+    }
+    return e;
+  });
+
+  localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(parsed));
   return parsed;
 };
 
@@ -592,8 +603,8 @@ export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase.from("cms_news").select("*").order("updated_at", { ascending: false });
-      if (!error && data) {
-        const fetched: NewsArticleCMS[] = data
+      if (!error && Array.isArray(data)) {
+        let fetched: NewsArticleCMS[] = data
           .map((d: any) => ({
             id: d.id,
             slug: d.slug,
@@ -609,6 +620,21 @@ export const fetchCMSNewsAsync = async (): Promise<NewsArticleCMS[]> => {
             updatedAt: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : new Date().toLocaleDateString(),
           }))
           .filter((n) => !deletedIds.includes(n.id) && !deletedIds.includes(n.slug));
+
+        // Always ensure seed INITIAL_NEWS exist if not explicitly deleted
+        const missingInitial = INITIAL_NEWS.filter(
+          (inews) => !deletedIds.includes(inews.id) && !deletedIds.includes(inews.slug) && !fetched.some((n) => n.id === inews.id || n.slug === inews.slug)
+        );
+        if (missingInitial.length > 0) {
+          fetched = [...fetched, ...missingInitial];
+        }
+
+        if (fetched.length === 0) {
+          fetched = INITIAL_NEWS.filter((inews) => !deletedIds.includes(inews.id) && !deletedIds.includes(inews.slug));
+        }
+
+        const REMOVED_NEWS_IDS = ["2", "3", "new-international-partnerships-announced", "bhutan-next-hub-business-investment"];
+        fetched = fetched.filter((n) => !REMOVED_NEWS_IDS.includes(n.id) && !REMOVED_NEWS_IDS.includes(n.slug));
 
         if (typeof window !== "undefined") {
           localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(fetched));
@@ -627,25 +653,37 @@ export const getCMSNews = (): NewsArticleCMS[] => {
   const deletedIds = getDeletedIds(DELETED_KEYS.NEWS);
   const stored = localStorage.getItem(CMS_KEYS.NEWS);
 
-  let parsed: NewsArticleCMS[];
-  if (!stored) {
-    parsed = INITIAL_NEWS;
-  } else {
-    parsed = JSON.parse(stored);
-  }
-
-  parsed = parsed.filter((n) => !deletedIds.includes(n.id) && !deletedIds.includes(n.slug));
-
-  if (!stored) {
-    const missingInitial = INITIAL_NEWS.filter(
-      (ie) => !deletedIds.includes(ie.id) && !deletedIds.includes(ie.slug) && !parsed.some((n) => n.id === ie.id || n.slug === ie.slug)
-    );
-    if (missingInitial.length > 0) {
-      parsed = [...parsed, ...missingInitial];
+  let parsed: NewsArticleCMS[] = [];
+  if (stored) {
+    try {
+      const p = JSON.parse(stored);
+      if (Array.isArray(p)) parsed = p;
+    } catch {
+      parsed = [];
     }
-    localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(parsed));
   }
 
+  const REMOVED_NEWS_IDS = ["2", "3", "new-international-partnerships-announced", "bhutan-next-hub-business-investment"];
+  parsed = parsed.filter(
+    (n) =>
+      !deletedIds.includes(n.id) &&
+      !deletedIds.includes(n.slug) &&
+      !REMOVED_NEWS_IDS.includes(n.id) &&
+      !REMOVED_NEWS_IDS.includes(n.slug)
+  );
+
+  const missingInitial = INITIAL_NEWS.filter(
+    (inews) => !deletedIds.includes(inews.id) && !deletedIds.includes(inews.slug) && !parsed.some((n) => n.id === inews.id || n.slug === inews.slug)
+  );
+  if (missingInitial.length > 0) {
+    parsed = [...parsed, ...missingInitial];
+  }
+
+  if (parsed.length === 0) {
+    parsed = INITIAL_NEWS.filter((inews) => !deletedIds.includes(inews.id) && !deletedIds.includes(inews.slug));
+  }
+
+  localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(parsed));
   return parsed;
 };
 

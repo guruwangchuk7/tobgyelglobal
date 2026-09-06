@@ -10,15 +10,17 @@ interface NewsUpdatesProps {
 }
 
 export default function NewsUpdates({ from = "news" }: NewsUpdatesProps) {
-  const [newsItems, setNewsItems] = useState<NewsArticleCMS[]>([]);
+  const [newsItems, setNewsItems] = useState<NewsArticleCMS[]>(() => {
+    return INITIAL_NEWS.filter((n) => n.status === "Published");
+  });
 
   useEffect(() => {
     const loaded = getCMSNews();
-    if (Array.isArray(loaded)) {
+    if (Array.isArray(loaded) && loaded.length > 0) {
       setNewsItems(loaded.filter((n) => n.status === "Published"));
     }
     fetchCMSNewsAsync().then((fetched) => {
-      if (Array.isArray(fetched)) {
+      if (Array.isArray(fetched) && fetched.length > 0) {
         setNewsItems(fetched.filter((n) => n.status === "Published"));
       }
     });

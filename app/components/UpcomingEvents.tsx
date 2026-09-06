@@ -11,15 +11,17 @@ interface UpcomingEventsProps {
 }
 
 export default function UpcomingEvents({ from = "events" }: UpcomingEventsProps) {
-  const [events, setEvents] = useState<TradeEventCMS[]>([]);
+  const [events, setEvents] = useState<TradeEventCMS[]>(() => {
+    return INITIAL_EVENTS.filter((e) => e.status === "Published");
+  });
 
   useEffect(() => {
     const loaded = getCMSEvents();
-    if (Array.isArray(loaded)) {
+    if (Array.isArray(loaded) && loaded.length > 0) {
       setEvents(loaded.filter((e) => e.status === "Published"));
     }
     fetchCMSEventsAsync().then((fetched) => {
-      if (Array.isArray(fetched)) {
+      if (Array.isArray(fetched) && fetched.length > 0) {
         setEvents(fetched.filter((e) => e.status === "Published"));
       }
     });

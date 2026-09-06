@@ -62,7 +62,17 @@ export const getExhibitors = (): ExhibitorSubmission[] => {
   const stored = localStorage.getItem(STORAGE_KEYS.EXHIBITORS);
   if (!stored) return [];
   try {
-    return JSON.parse(stored);
+    const list: ExhibitorSubmission[] = JSON.parse(stored);
+    const cleaned = list.filter(
+      (item) =>
+        !item.email?.toLowerCase().includes("guruwangchuk") &&
+        item.companyName?.trim().toLowerCase() !== "g" &&
+        item.contactPerson?.trim().toLowerCase() !== "g"
+    );
+    if (cleaned.length !== list.length) {
+      localStorage.setItem(STORAGE_KEYS.EXHIBITORS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -74,18 +84,30 @@ export const fetchExhibitorsAsync = async (): Promise<ExhibitorSubmission[]> => 
     if (res.ok) {
       const { records } = await res.json();
       if (Array.isArray(records)) {
-        return records.map((d: any) => ({
-          id: d.id,
-          companyName: d.company_name,
-          contactPerson: d.contact_person,
-          email: d.email,
-          phone: d.phone,
-          sector: d.sector,
-          boothSize: d.booth_size,
-          description: d.description || "",
-          status: d.status || "Pending",
-          submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
-        }));
+        const mapped: ExhibitorSubmission[] = records
+          .map((d: any) => ({
+            id: d.id,
+            companyName: d.company_name,
+            contactPerson: d.contact_person,
+            email: d.email,
+            phone: d.phone,
+            sector: d.sector,
+            boothSize: d.booth_size,
+            description: d.description || "",
+            status: d.status || "Pending",
+            submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
+          }))
+          .filter(
+            (item) =>
+              !item.email?.toLowerCase().includes("guruwangchuk") &&
+              item.companyName?.trim().toLowerCase() !== "g" &&
+              item.contactPerson?.trim().toLowerCase() !== "g"
+          );
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEYS.EXHIBITORS, JSON.stringify(mapped));
+        }
+        return mapped;
       }
     }
   } catch (err) {
@@ -167,7 +189,17 @@ export const getSponsors = (): SponsorSubmission[] => {
   const stored = localStorage.getItem(STORAGE_KEYS.SPONSORS);
   if (!stored) return [];
   try {
-    return JSON.parse(stored);
+    const list: SponsorSubmission[] = JSON.parse(stored);
+    const cleaned = list.filter(
+      (item) =>
+        !item.email?.toLowerCase().includes("guruwangchuk") &&
+        item.organizationName?.trim().toLowerCase() !== "g" &&
+        item.contactPerson?.trim().toLowerCase() !== "g"
+    );
+    if (cleaned.length !== list.length) {
+      localStorage.setItem(STORAGE_KEYS.SPONSORS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -179,18 +211,30 @@ export const fetchSponsorsAsync = async (): Promise<SponsorSubmission[]> => {
     if (res.ok) {
       const { records } = await res.json();
       if (Array.isArray(records)) {
-        return records.map((d: any) => ({
-          id: d.id,
-          organizationName: d.organization_name,
-          contactPerson: d.contact_person,
-          email: d.email,
-          phone: d.phone,
-          tier: d.tier,
-          budget: d.budget || "",
-          message: d.message || "",
-          status: d.status || "Pending",
-          submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
-        }));
+        const mapped: SponsorSubmission[] = records
+          .map((d: any) => ({
+            id: d.id,
+            organizationName: d.organization_name,
+            contactPerson: d.contact_person,
+            email: d.email,
+            phone: d.phone,
+            tier: d.tier,
+            budget: d.budget || "",
+            message: d.message || "",
+            status: d.status || "Pending",
+            submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
+          }))
+          .filter(
+            (item) =>
+              !item.email?.toLowerCase().includes("guruwangchuk") &&
+              item.organizationName?.trim().toLowerCase() !== "g" &&
+              item.contactPerson?.trim().toLowerCase() !== "g"
+          );
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEYS.SPONSORS, JSON.stringify(mapped));
+        }
+        return mapped;
       }
     }
   } catch (err) {
@@ -270,7 +314,16 @@ export const getVisitors = (): VisitorSubmission[] => {
   const stored = localStorage.getItem(STORAGE_KEYS.VISITORS);
   if (!stored) return [];
   try {
-    return JSON.parse(stored);
+    const list: VisitorSubmission[] = JSON.parse(stored);
+    const cleaned = list.filter(
+      (item) =>
+        !item.email?.toLowerCase().includes("guruwangchuk") &&
+        item.fullName?.trim().toLowerCase() !== "g"
+    );
+    if (cleaned.length !== list.length) {
+      localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -282,19 +335,30 @@ export const fetchVisitorsAsync = async (): Promise<VisitorSubmission[]> => {
     if (res.ok) {
       const { records } = await res.json();
       if (Array.isArray(records)) {
-        return records.map((d: any) => ({
-          id: d.id,
-          fullName: d.full_name,
-          email: d.email,
-          phone: d.phone,
-          country: d.country,
-          profession: d.profession || "Visitor",
-          purpose: d.purpose || "General",
-          daysAttending: Array.isArray(d.days_attending) ? d.days_attending : [d.days_attending],
-          passCode: d.pass_code,
-          status: d.status || "Approved",
-          submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
-        }));
+        const mapped: VisitorSubmission[] = records
+          .map((d: any) => ({
+            id: d.id,
+            fullName: d.full_name,
+            email: d.email,
+            phone: d.phone,
+            country: d.country,
+            profession: d.profession || "Visitor",
+            purpose: d.purpose || "General",
+            daysAttending: Array.isArray(d.days_attending) ? d.days_attending : [d.days_attending],
+            passCode: d.pass_code,
+            status: d.status || "Approved",
+            submittedAt: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
+          }))
+          .filter(
+            (item) =>
+              !item.email?.toLowerCase().includes("guruwangchuk") &&
+              item.fullName?.trim().toLowerCase() !== "g"
+          );
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(mapped));
+        }
+        return mapped;
       }
     }
   } catch (err) {
