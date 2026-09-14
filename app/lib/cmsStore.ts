@@ -565,12 +565,14 @@ export const saveCMSEvent = (event: TradeEventCMS): TradeEventCMS => {
       featured_on_home: event.featuredOnHome,
       updated_at: new Date().toISOString(),
     };
-    supabase
-      .from("cms_events")
-      .upsert([payload])
-      .then(({ error }) => {
+    void (async () => {
+      try {
+        const { error } = await supabase.from("cms_events").upsert([payload]);
         if (error) console.error("Error upserting event to Supabase:", error);
-      });
+      } catch (err) {
+        console.error("Error upserting event to Supabase:", err);
+      }
+    })();
   }
 
   return event;
@@ -588,13 +590,17 @@ export const deleteCMSEvent = (id: string) => {
   localStorage.setItem(CMS_KEYS.EVENTS, JSON.stringify(updated));
 
   if (isSupabaseConfigured()) {
-    supabase
-      .from("cms_events")
-      .delete()
-      .or(`id.eq.${id},slug.eq.${id}`)
-      .then(({ error }) => {
+    void (async () => {
+      try {
+        const { error } = await supabase
+          .from("cms_events")
+          .delete()
+          .or(`id.eq.${id},slug.eq.${id}`);
         if (error) console.error("Error deleting CMS event from Supabase:", error);
-      });
+      } catch (err) {
+        console.error("Error deleting CMS event from Supabase:", err);
+      }
+    })();
   }
 };
 
@@ -738,13 +744,17 @@ export const deleteCMSNews = (id: string) => {
   localStorage.setItem(CMS_KEYS.NEWS, JSON.stringify(updated));
 
   if (isSupabaseConfigured()) {
-    supabase
-      .from("cms_news")
-      .delete()
-      .or(`id.eq.${id},slug.eq.${id}`)
-      .then(({ error }) => {
+    void (async () => {
+      try {
+        const { error } = await supabase
+          .from("cms_news")
+          .delete()
+          .or(`id.eq.${id},slug.eq.${id}`);
         if (error) console.error("Error deleting CMS news from Supabase:", error);
-      });
+      } catch (err) {
+        console.error("Error deleting CMS news from Supabase:", err);
+      }
+    })();
   }
 };
 

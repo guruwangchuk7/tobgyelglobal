@@ -26,6 +26,7 @@ export default function Header() {
     { name: "EVENTS", href: "/events" },
     { name: "EXHIBIT", href: "/exhibit" },
     { name: "VISIT", href: "/visit" },
+    { name: "BOOK A STALL", href: "/book-stall" },
     { name: "PARTNERS", href: "/partners" },
     { name: "NEWS", href: "/news" },
     { name: "CONTACT", href: "/contact" },

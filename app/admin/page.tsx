@@ -45,7 +45,8 @@ import {
   Monitor,
   Tablet,
   Smartphone,
-  Ticket
+  Ticket,
+  Store
 } from "lucide-react";
 import VisitorTicketPass from "@/app/components/VisitorTicketPass";
 
@@ -66,6 +67,14 @@ import {
   SponsorSubmission,
   VisitorSubmission,
 } from "@/app/lib/registrationStore";
+
+import {
+  fetchStallBookingsAsync,
+  getStallBookings,
+  updateStallBookingStatus,
+  deleteStallBooking,
+  StallBooking,
+} from "@/app/lib/stallStore";
 
 import {
   getCMSEvents,
@@ -134,7 +143,7 @@ export default function AdminPage() {
 
   // Navigation Module
   const [mainModule, setMainModule] = useState<
-    "dashboard" | "exhibitors" | "sponsors" | "visitors" | "events" | "news" | "product-ads" | "hero" | "why-exhibit" | "participants" | "visit" | "partners" | "about" | "contact" | "regulations"
+    "dashboard" | "exhibitors" | "sponsors" | "visitors" | "stall-bookings" | "events" | "news" | "product-ads" | "hero" | "why-exhibit" | "participants" | "visit" | "partners" | "about" | "contact" | "regulations"
   >("dashboard");
 
   // Submissions Data State
@@ -144,6 +153,7 @@ export default function AdminPage() {
   const [exhibitors, setExhibitors] = useState<ExhibitorSubmission[]>([]);
   const [sponsors, setSponsors] = useState<SponsorSubmission[]>([]);
   const [visitors, setVisitors] = useState<VisitorSubmission[]>([]);
+  const [stallBookings, setStallBookings] = useState<StallBooking[]>([]);
 
   // CMS Content State
   const [cmsEvents, setCmsEvents] = useState<TradeEventCMS[]>(() => {
@@ -197,15 +207,18 @@ export default function AdminPage() {
     setExhibitors(getExhibitors());
     setSponsors(getSponsors());
     setVisitors(getVisitors());
+    setStallBookings(getStallBookings());
     setCmsEvents(getCMSEvents());
     setCmsNews(getCMSNews());
 
     const exh = await fetchExhibitorsAsync();
     const sp = await fetchSponsorsAsync();
     const vis = await fetchVisitorsAsync();
+    const stalls = await fetchStallBookingsAsync();
     setExhibitors(exh);
     setSponsors(sp);
     setVisitors(vis);
+    setStallBookings(stalls);
 
     const evts = await fetchCMSEventsAsync();
     const news = await fetchCMSNewsAsync();
@@ -303,6 +316,21 @@ export default function AdminPage() {
     if (confirm("Are you sure you want to delete this visitor pass entry?")) {
       setVisitors((prev) => prev.filter((v) => v.id !== id));
       await deleteVisitor(id);
+      await refreshData();
+    }
+  };
+
+  // Stall Booking Actions
+  const handleStallStatus = async (id: string, status: "Pending" | "Approved" | "Rejected") => {
+    setStallBookings((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+    await updateStallBookingStatus(id, status);
+    await refreshData();
+  };
+
+  const handleDeleteStall = async (id: string) => {
+    if (confirm("Delete this stall booking? This frees the stall for others.")) {
+      setStallBookings((prev) => prev.filter((s) => s.id !== id));
+      await deleteStallBooking(id);
       await refreshData();
     }
   };
@@ -494,9 +522,14 @@ export default function AdminPage() {
   };
 
   // Export Submissions CSV
-  const exportToCSV = (type: "exhibitors" | "sponsors" | "visitors") => {
+  const exportToCSV = (type: "exhibitors" | "sponsors" | "visitors" | "stall-bookings") => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    if (type === "exhibitors") {
+    if (type === "stall-bookings") {
+      csvContent += "ID,Stall,Zone,Size,Contact,Company,Email,Phone,Country,Status,Submitted At\n";
+      stallBookings.forEach((item) => {
+        csvContent += `"${item.id}","${item.stallLabel}","${item.zone}","${item.size}","${item.contactName}","${item.companyName}","${item.email}","${item.phone}","${item.country}","${item.status}","${item.submittedAt}"\n`;
+      });
+    } else if (type === "exhibitors") {
       csvContent += "ID,Company Name,Contact Person,Email,Phone,Sector,Booth Size,Status,Submitted At\n";
       exhibitors.forEach((item) => {
         csvContent += `"${item.id}","${item.companyName}","${item.contactPerson}","${item.email}","${item.phone}","${item.sector}","${item.boothSize}","${item.status}","${item.submittedAt}"\n`;
@@ -541,6 +574,17 @@ export default function AdminPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const filteredStallBookings = stallBookings.filter((s) => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      s.stallLabel.toLowerCase().includes(q) ||
+      s.contactName.toLowerCase().includes(q) ||
+      s.companyName.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q);
+    const matchesStatus = statusFilter === "All" || s.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   // Filtered CMS Items
   const filteredEvents = cmsEvents.filter((evt) => {
     const matchesSearch =
@@ -567,7 +611,8 @@ export default function AdminPage() {
   const totalPending =
     exhibitors.filter(e => e.status === "Pending").length +
     sponsors.filter(s => s.status === "Pending").length +
-    visitors.filter(v => v.status === "Pending").length;
+    visitors.filter(v => v.status === "Pending").length +
+    stallBookings.filter(s => s.status === "Pending").length;
 
   return (
     <div className="min-h-screen bg-[#020D1B] text-white font-sans flex flex-col">
@@ -785,6 +830,22 @@ export default function AdminPage() {
                       </div>
                       <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px]">
                         {visitors.length}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => selectModule("stall-bookings")}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all min-h-[38px] ${mainModule === "stall-bookings"
+                          ? "bg-slate-800 text-[#EAA500] font-bold"
+                          : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Store className="w-3.5 h-3.5" />
+                        <span>Stall Bookings</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px]">
+                        {stallBookings.length}
                       </span>
                     </button>
                   </div>
@@ -1005,6 +1066,7 @@ export default function AdminPage() {
                     {mainModule === "exhibitors" && "Exhibitor Registrations"}
                     {mainModule === "sponsors" && "Sponsorship Applications"}
                     {mainModule === "visitors" && "Visitor Pass Issuances"}
+                    {mainModule === "stall-bookings" && "Stall Bookings"}
                     {mainModule === "events" && (editingEvent ? "Editing Trade Event" : "Trade Fairs & Events Manager")}
                     {mainModule === "news" && (editingNews ? "Editing Press Release" : "News & Press Bureau")}
                     {mainModule === "product-ads" && (editingAd ? "Editing Product Showcase Ad" : "Products & Services Ads Manager")}
@@ -1035,7 +1097,7 @@ export default function AdminPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                {(mainModule === "exhibitors" || mainModule === "sponsors" || mainModule === "visitors") && (
+                {(mainModule === "exhibitors" || mainModule === "sponsors" || mainModule === "visitors" || mainModule === "stall-bookings") && (
                   <button
                     onClick={() => exportToCSV(mainModule)}
                     className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-colors flex items-center gap-1.5 min-h-[40px]"
@@ -1171,6 +1233,20 @@ export default function AdminPage() {
                       {productAds.filter(a => a.active).length} Active Ads
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => selectModule("stall-bookings")}
+                    className="bg-[#03142A] border border-slate-800 rounded-xl p-5 space-y-2 text-left hover:border-[#EAA500]/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold uppercase text-slate-400">Stall Bookings</span>
+                      <Store className="w-5 h-5 text-[#EAA500]" />
+                    </div>
+                    <div className="text-2xl font-black text-white">{stallBookings.length}</div>
+                    <div className="text-[11px] text-amber-400 font-semibold">
+                      {stallBookings.filter(s => s.status === "Pending").length} Pending Review
+                    </div>
+                  </button>
                 </div>
               </div>
             )}
@@ -2635,6 +2711,120 @@ export default function AdminPage() {
             )}
 
             {/* SUBMISSIONS MODULES (Exhibitors, Sponsors, Visitors) */}
+            {/* STALL BOOKINGS MODULE */}
+            {mainModule === "stall-bookings" && (
+              <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      placeholder="Search stall bookings..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[#EAA500]"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                    {["All", "Pending", "Approved", "Rejected"].map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setStatusFilter(tab)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === tab
+                            ? "bg-[#0A4D8C] text-white shadow"
+                            : "bg-slate-900 text-slate-400 hover:text-white"
+                          }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {stallBookings.length === 0 && (
+                  <div className="text-center py-10 text-slate-500 text-xs">
+                    No stall bookings yet. Bookings made on the public
+                    <span className="text-[#EAA500] font-semibold"> Book a Stall </span>
+                    page will appear here.
+                  </div>
+                )}
+
+                <div className="overflow-x-auto rounded-xl border border-slate-800">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-900/90 text-slate-300 font-extrabold uppercase border-b border-slate-800">
+                        <th className="py-3 px-4">Stall</th>
+                        <th className="py-3 px-4">Booked By</th>
+                        <th className="py-3 px-4">Contact Info</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80">
+                      {filteredStallBookings.map((bk) => (
+                        <tr key={bk.id} className="hover:bg-slate-900/50 transition-colors">
+                          <td className="py-3.5 px-4 font-bold text-white">
+                            {bk.stallLabel}
+                            <div className="text-[11px] text-slate-400 font-normal">
+                              {bk.size} · {bk.zone}
+                              {bk.country && bk.country !== "OPEN" ? ` · ${bk.country}` : ""}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300">
+                            {bk.contactName}
+                            <div className="text-slate-400">{bk.companyName || "—"}</div>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300">
+                            <div>{bk.email}</div>
+                            <div className="text-slate-400">{bk.phone}</div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${bk.status === "Approved"
+                                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                                  : bk.status === "Pending"
+                                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                    : "bg-red-500/20 text-red-300 border border-red-500/40"
+                                }`}
+                            >
+                              {bk.status}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleStallStatus(bk.id, "Approved")}
+                                className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 font-bold text-[10px] uppercase"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStallStatus(bk.id, "Rejected")}
+                                className="px-2.5 py-1 rounded bg-red-600/20 hover:bg-red-600/40 text-red-300 font-bold text-[10px] uppercase"
+                              >
+                                Reject
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteStall(bk.id)}
+                                className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {(mainModule === "exhibitors" || mainModule === "sponsors" || mainModule === "visitors") && (
               <div className="bg-[#03142A] border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-6 shadow-xl text-left">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

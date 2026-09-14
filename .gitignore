@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local fallback datastore (stall bookings when Supabase is unavailable)
+/.data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.gstack/
