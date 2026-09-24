@@ -63,39 +63,43 @@ export const STALL_ZONES: StallZone[] = [
     id: "smart",
     name: "Smart Techs, Mobility & Industrials",
     size: "6m x 6m",
+    // Medium green like the printed plan.
     available:
-      "bg-green-600/80 hover:bg-green-500 border-green-400/60 text-white",
+      "bg-[#5b8a3c] hover:bg-[#699c48] border-[#4a7230] text-white",
     stalls: buildStalls("smart", "Smart Techs", "6m x 6m", smartCountry, 15),
   },
   {
     id: "innov",
     name: "Innovatives / Entrepreneurs",
     size: "3m x 3m",
-    available: "bg-red-600/80 hover:bg-red-500 border-red-400/60 text-white",
+    available: "bg-[#e02424] hover:bg-[#f03434] border-[#b81c1c] text-white",
     stalls: buildStalls("innov", "Innovatives", "3m x 3m", () => "OPEN", 6),
   },
   {
     id: "food",
     name: "Food Courts",
-    size: "3m x 3m",
+    size: "3m x 6m",
+    // Peach / salmon boxes on the printed plan.
     available:
-      "bg-orange-400/80 hover:bg-orange-300 border-orange-300/60 text-slate-900",
-    stalls: buildStalls("food", "Food Court", "3m x 3m", foodCountry, 6),
+      "bg-[#e8a87c] hover:bg-[#efb890] border-[#d68f5f] text-slate-900",
+    stalls: buildStalls("food", "Food Court", "3m x 6m", foodCountry, 6),
   },
   {
     id: "sme",
     name: "SME Businesses",
     size: "3m x 3m",
+    // Mustard / gold.
     available:
-      "bg-yellow-600/80 hover:bg-yellow-500 border-yellow-400/60 text-white",
+      "bg-[#c9a227] hover:bg-[#dab332] border-[#a8841f] text-slate-900",
     stalls: buildStalls("sme", "SME Business", "3m x 3m", smeCountry, 8),
   },
   {
     id: "extra",
     name: "Extra Stalls",
     size: "6m x 6m",
+    // Pale green.
     available:
-      "bg-emerald-300/80 hover:bg-emerald-200 border-emerald-200/60 text-slate-900",
+      "bg-[#b5d99c] hover:bg-[#c4e3af] border-[#9bc47e] text-slate-900",
     stalls: buildStalls("extra", "Extra Stall", "6m x 6m", () => "OPEN", 5),
   },
 ];

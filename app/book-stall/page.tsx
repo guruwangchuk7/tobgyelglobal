@@ -15,6 +15,10 @@ import {
   Send,
   X,
   Store,
+  ChevronDown,
+  ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import {
   STALL_ZONES,
@@ -29,14 +33,6 @@ import {
   fetchStallAvailability,
 } from "@/app/lib/stallStore";
 
-// How the stall grid for each zone is laid out (mirrors the printed floor plan).
-const ZONE_GRID: Record<string, string> = {
-  smart: "grid-cols-5",
-  innov: "grid-cols-3 sm:grid-cols-1",
-  food: "grid-cols-3",
-  sme: "grid-cols-4",
-  extra: "grid-cols-5",
-};
 
 export default function BookStallPage() {
   const [takenIds, setTakenIds] = useState<Set<string>>(new Set());
@@ -388,6 +384,13 @@ function LegendSwatch({ className, label }: { className: string; label: string }
 }
 
 /* -------------------- Floor plan -------------------- */
+// Faithful recreation of the printed expo site map on a grey canvas: the road
+// runs down the middle, the green Smart-Techs grid + Parking sit on the right,
+// and café / stage / food / SME / children zones stack on the left.
+const CANVAS = "#63635f"; // medium grey background
+const GREY_LIGHT = "#8a8a86"; // road + parking
+const BLUE = "#4472c4"; // resident / toilet / arrows
+
 function FloorPlan({
   takenIds,
   selected,
@@ -402,98 +405,217 @@ function FloorPlan({
     []
   );
 
+  const cellProps = { takenIds, selected, onSelect };
+
+  const innov = zoneById["innov"];
+
   return (
-    <div className="rounded-2xl border border-slate-800 bg-[#04182f] p-3 sm:p-5 overflow-x-auto">
-      <div className="min-w-[820px] space-y-4">
-        {/* Top row: context + smart techs */}
-        <div className="grid grid-cols-12 gap-4">
-          {/* Left context */}
-          <div className="col-span-3 space-y-3">
-            <ContextBlock className="bg-[#1e4fa0] h-16" label="Resident Café" />
-            <ContextBlock
-              className="bg-purple-600 h-14 rounded-[40%_40%_10%_10%/60%_60%_10%_10%]"
-              label="Stage"
-            />
+    <div
+      className="rounded-2xl border border-slate-700 p-3 sm:p-5 overflow-x-auto"
+      style={{ backgroundColor: CANVAS }}
+    >
+      <div className="min-w-[1000px]">
+        {/* Title banner (dark text on grey, like the printed plan) */}
+        <div className="mb-4">
+          <div className="text-sm sm:text-base font-black italic tracking-wide text-slate-900">
+            HIMALAYAN FOOD, TRADE &amp; INNOVATIVES EXPO
           </div>
-
-          {/* Road */}
-          <ContextBlock
-            className="col-span-1 bg-slate-600 min-h-[180px]"
-            label="ROAD"
-            vertical
-          />
-
-          {/* Right: Smart techs green grid */}
-          <div className="col-span-8">
-            <ZonePanel
-              zone={zoneById["smart"]}
-              takenIds={takenIds}
-              selected={selected}
-              onSelect={onSelect}
-              grouped
-            />
+          <div className="text-[11px] font-semibold text-slate-800">
+            Date: 30th Dec 2026 to 3rd Jan 2027&nbsp;&nbsp;Venue: Old vegetables
+            market opp. of Bhutan Telecom
           </div>
         </div>
 
-        {/* Middle row: food/sme + innovatives + extra */}
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-3 space-y-4">
-            <ZonePanel
-              zone={zoneById["food"]}
-              takenIds={takenIds}
-              selected={selected}
-              onSelect={onSelect}
-              columnCountries={["INDIA", "BHUTAN", "NEPAL"]}
-            />
-            <ZonePanel
-              zone={zoneById["sme"]}
-              takenIds={takenIds}
-              selected={selected}
-              onSelect={onSelect}
-              columnCountries={["INDIA", "BHUTAN", "NEPAL", "OPEN"]}
-            />
-          </div>
-
-          {/* Innovatives red column */}
-          <div className="col-span-1">
-            <ZonePanel
-              zone={zoneById["innov"]}
-              takenIds={takenIds}
-              selected={selected}
-              onSelect={onSelect}
-              compactTitle
+        {/* Main site map laid out with named grid areas so the road spans the
+            full height and parking stretches from the road to the toilet. */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0,3.3fr) 48px auto minmax(0,5.6fr)",
+            gridTemplateRows: "auto auto 1fr",
+            gridTemplateAreas: [
+              '"cafe road . resident"',
+              '"content road innov smart"',
+              '"children road parking parking"',
+            ].join(" "),
+            gap: "10px",
+          }}
+        >
+          {/* Resident café — centered at the top, directly above the Stage. */}
+          <div style={{ gridArea: "cafe" }} className="flex justify-center">
+            <ContextBlock
+              className="h-11 w-44 text-white"
+              style={{ backgroundColor: BLUE }}
+              label="Resident Café"
             />
           </div>
 
-          <div className="col-span-8 space-y-4">
-            <ZonePanel
-              zone={zoneById["extra"]}
-              takenIds={takenIds}
-              selected={selected}
-              onSelect={onSelect}
+          {/* Resident — top-right */}
+          <div style={{ gridArea: "resident" }} className="flex justify-end">
+            <ContextBlock
+              className="h-9 w-28 text-white"
+              style={{ backgroundColor: BLUE }}
+              label="Resident"
             />
-            <div className="grid grid-cols-4 gap-4">
-              <ContextBlock
-                className="col-span-3 bg-slate-600 h-24"
-                label="Parking Lot"
-              />
-              <ContextBlock className="col-span-1 bg-teal-700 h-24" label="Toilet" />
+          </div>
+
+          {/* Stage (centered, directly below the café) + Food courts + SME */}
+          <div style={{ gridArea: "content" }} className="flex flex-col gap-3">
+            <div className="flex justify-center">
+              <div
+                className="w-44 h-14 flex items-center justify-center text-white text-xs font-bold uppercase tracking-wide [clip-path:polygon(14%_0,86%_0,100%_50%,86%_100%,14%_100%,0_50%)]"
+                style={{ backgroundColor: "#7030a0" }}
+              >
+                Stage
+              </div>
+            </div>
+
+            <div>
+              <ZoneLabel name="Food courts" size={zoneById["food"].size} stacked />
+              <VerticalLabelGrid zone={zoneById["food"]} cols={3} {...cellProps} />
+            </div>
+
+            <div className="mt-1">
+              <ZoneLabel name="SME Businesses" size={zoneById["sme"].size} />
+              <VerticalLabelGrid zone={zoneById["sme"]} cols={4} {...cellProps} />
             </div>
           </div>
-        </div>
 
-        {/* Bottom context */}
-        <div className="grid grid-cols-12 gap-4">
+          {/* Road — spans all three rows via the named area */}
+          <div
+            style={{ gridArea: "road", backgroundColor: GREY_LIGHT }}
+            className="rounded flex flex-col items-center py-3 gap-2"
+          >
+            <ChevronDown className="w-5 h-5" style={{ color: BLUE }} strokeWidth={3} />
+            <span className="[writing-mode:vertical-rl] rotate-180 flex-1 flex items-center text-[11px] font-bold text-slate-900 uppercase tracking-widest">
+              Road
+            </span>
+            <ChevronUp className="w-5 h-5" style={{ color: BLUE }} strokeWidth={3} />
+          </div>
+
+          {/* Innovatives — white vertical label + red column */}
+          <div style={{ gridArea: "innov" }} className="flex gap-1.5">
+            <div className="bg-white rounded flex items-center justify-center px-0.5">
+              <span className="[writing-mode:vertical-rl] rotate-180 whitespace-nowrap text-[9px] font-bold text-slate-900 py-1">
+                Innovatives / Entrepreneurs ({innov.size})
+              </span>
+            </div>
+            <div className="flex flex-col gap-1.5 w-14 flex-1">
+              {innov.stalls.map((s) => (
+                <StallCell
+                  key={s.id}
+                  stall={s}
+                  zone={innov}
+                  taken={takenIds.has(s.id)}
+                  isSelected={selected?.id === s.id}
+                  onSelect={onSelect}
+                  fill
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Smart techs grid + extra stalls */}
+          <div style={{ gridArea: "smart" }} className="flex flex-col gap-2">
+            <ZoneLabel
+              name="Smart techs, mobility, industrials"
+              size={zoneById["smart"].size}
+            />
+            <GroupedSmart zone={zoneById["smart"]} {...cellProps} />
+
+            <div className="mt-0.5">
+              <div className="grid grid-cols-5 gap-1.5">
+                {zoneById["extra"].stalls.map((s) => (
+                  <StallCell
+                    key={s.id}
+                    stall={s}
+                    zone={zoneById["extra"]}
+                    taken={takenIds.has(s.id)}
+                    isSelected={selected?.id === s.id}
+                    onSelect={onSelect}
+                    wide
+                  />
+                ))}
+              </div>
+              <div className="mt-1.5 flex justify-center">
+                <span className="bg-white text-slate-900 text-[9px] font-bold px-4 py-0.5 rounded uppercase tracking-wide">
+                  Extra Stalls ({zoneById["extra"].size})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Children zones — bottom-left */}
           <ContextBlock
-            className="col-span-4 bg-lime-700/70 h-14"
+            className="min-h-[120px] text-slate-900"
+            style={{ gridArea: "children", backgroundColor: "#a9d18e" }}
             label="Children Zones"
           />
-          <ContextBlock
-            className="col-span-8 bg-slate-700 h-14"
-            label="Exit & Entry Gate → Samtsi Highway to Phuentsholing"
+
+          {/* Parking + Toilet — spans road-edge to the right */}
+          <div
+            style={{ gridArea: "parking" }}
+            className="flex gap-2.5 min-h-[120px]"
+          >
+            <ContextBlock
+              className="flex-1 text-slate-900"
+              style={{ backgroundColor: GREY_LIGHT }}
+              label="Parking Lot"
+            />
+            <ContextBlock
+              className="w-16 text-white"
+              style={{ backgroundColor: BLUE }}
+              label="Toilet"
+              vertical
+            />
+          </div>
+        </div>
+
+        {/* Exit & entry gate */}
+        <div className="mt-3 flex items-center gap-2 pl-[26%]">
+          <span
+            className="w-5 h-4 rounded-sm border border-slate-900/40"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg,#166534 0 3px,#052e16 3px 6px)",
+            }}
           />
+          <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wide">
+            Exit &amp; Entry Gate Point
+          </span>
+        </div>
+
+        {/* Highway footer */}
+        <div
+          className="mt-3 rounded flex items-center justify-center gap-4 py-3"
+          style={{ backgroundColor: "#57574f" }}
+        >
+          <ChevronsRight className="w-5 h-5" style={{ color: BLUE }} strokeWidth={3} />
+          <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide">
+            Samtsi Highway Road to Phuentsholing
+          </span>
+          <ChevronsLeft className="w-5 h-5" style={{ color: BLUE }} strokeWidth={3} />
         </div>
       </div>
+    </div>
+  );
+}
+
+// A dark zone label with italic size, e.g. "Food courts (3m x 6m)".
+function ZoneLabel({
+  name,
+  size,
+  stacked,
+}: {
+  name: string;
+  size: string;
+  stacked?: boolean;
+}) {
+  return (
+    <div className="mb-1.5 text-[11px] font-black text-slate-900 leading-tight">
+      {name}
+      {stacked ? <br /> : " "}
+      <span className="italic font-bold text-slate-800">({size})</span>
     </div>
   );
 }
@@ -502,17 +624,20 @@ function ContextBlock({
   className,
   label,
   vertical,
+  style,
 }: {
   className: string;
   label: string;
   vertical?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
-      className={`rounded-lg flex items-center justify-center text-center px-2 ${className}`}
+      className={`rounded flex items-center justify-center text-center px-2 ${className}`}
+      style={style}
     >
       <span
-        className={`text-[10px] sm:text-xs font-bold text-white/90 uppercase tracking-wide ${
+        className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
           vertical ? "[writing-mode:vertical-rl] rotate-180" : ""
         }`}
       >
@@ -522,106 +647,41 @@ function ContextBlock({
   );
 }
 
-function ZonePanel({
+// Food / SME: columns each with a rotated country label + a vertical stack.
+function VerticalLabelGrid({
   zone,
-  takenIds,
-  selected,
-  onSelect,
-  grouped,
-  columnCountries,
-  compactTitle,
-}: {
-  zone: StallZone | undefined;
-  takenIds: Set<string>;
-  selected: StallDef | null;
-  onSelect: (s: StallDef) => void;
-  grouped?: boolean;
-  columnCountries?: string[];
-  compactTitle?: boolean;
-}) {
-  if (!zone) return null;
-  const gridCls = ZONE_GRID[zone.id] || "grid-cols-4";
-
-  return (
-    <div className="rounded-xl border border-slate-700/60 bg-[#03142A]/60 p-3">
-      <div className="flex items-center justify-between mb-2 gap-2">
-        <h3
-          className={`font-extrabold uppercase tracking-wide text-white ${
-            compactTitle ? "text-[10px] leading-tight" : "text-xs"
-          }`}
-        >
-          {zone.name}
-        </h3>
-        <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-          {zone.size}
-        </span>
-      </div>
-
-      {/* Column country headers (Food / SME) */}
-      {columnCountries && (
-        <div className={`grid ${gridCls} gap-1.5 mb-1.5`}>
-          {columnCountries.map((c, i) => (
-            <span
-              key={i}
-              className="text-[9px] text-center font-bold uppercase text-slate-400 tracking-wider"
-            >
-              {c === "OPEN" ? "Open" : c}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {grouped ? (
-        <GroupedSmart
-          zone={zone}
-          takenIds={takenIds}
-          selected={selected}
-          onSelect={onSelect}
-        />
-      ) : (
-        <div className={`grid ${gridCls} gap-1.5`}>
-          {zone.stalls.map((s: StallDef) => (
-            <StallCell
-              key={s.id}
-              stall={s}
-              zone={zone}
-              taken={takenIds.has(s.id)}
-              isSelected={selected?.id === s.id}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Smart techs: 3 country rows of 5.
-function GroupedSmart({
-  zone,
+  cols,
   takenIds,
   selected,
   onSelect,
 }: {
   zone: StallZone;
+  cols: number;
   takenIds: Set<string>;
   selected: StallDef | null;
   onSelect: (s: StallDef) => void;
 }) {
-  const rows: { country: string; stalls: StallDef[] }[] = [
-    { country: "INDIA", stalls: zone.stalls.slice(0, 5) },
-    { country: "BHUTAN", stalls: zone.stalls.slice(5, 10) },
-    { country: "NEPAL", stalls: zone.stalls.slice(10, 15) },
-  ];
+  const rows = Math.ceil(zone.stalls.length / cols);
+  const columns = Array.from({ length: cols }, (_, c) => {
+    const stalls: StallDef[] = [];
+    for (let r = 0; r < rows; r++) {
+      const s = zone.stalls[r * cols + c];
+      if (s) stalls.push(s);
+    }
+    return { country: stalls[0]?.country, stalls };
+  });
+
   return (
-    <div className="space-y-1.5">
-      {rows.map((row) => (
-        <div key={row.country} className="flex items-center gap-2">
-          <span className="w-14 shrink-0 text-[9px] font-bold uppercase text-slate-400 tracking-wider">
-            {row.country}
-          </span>
-          <div className="grid grid-cols-5 gap-1.5 flex-1">
-            {row.stalls.map((s) => (
+    <div className="flex gap-1.5">
+      {columns.map((col, i) => (
+        <div key={i} className="flex items-stretch gap-1">
+          {col.country && col.country !== "OPEN" && (
+            <span className="[writing-mode:vertical-rl] rotate-180 text-[9px] font-bold text-slate-900 tracking-wide">
+              {col.country}
+            </span>
+          )}
+          <div className="flex flex-col gap-1.5 w-14">
+            {col.stalls.map((s) => (
               <StallCell
                 key={s.id}
                 stall={s}
@@ -638,27 +698,80 @@ function GroupedSmart({
   );
 }
 
+// Smart techs: 3 rows of 5 with a centered white country label above each row.
+function GroupedSmart({
+  zone,
+  takenIds,
+  selected,
+  onSelect,
+}: {
+  zone: StallZone | undefined;
+  takenIds: Set<string>;
+  selected: StallDef | null;
+  onSelect: (s: StallDef) => void;
+}) {
+  if (!zone) return null;
+  const rows: { country: string; stalls: StallDef[] }[] = [
+    { country: "INDIA", stalls: zone.stalls.slice(0, 5) },
+    { country: "BHUTAN", stalls: zone.stalls.slice(5, 10) },
+    { country: "NEPAL", stalls: zone.stalls.slice(10, 15) },
+  ];
+  return (
+    <div className="space-y-1.5">
+      {rows.map((row) => (
+        <div key={row.country}>
+          <div className="flex justify-center mb-1">
+            <span className="bg-white text-slate-900 text-[9px] font-bold px-4 py-0.5 rounded tracking-wide">
+              {row.country}
+            </span>
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {row.stalls.map((s) => (
+              <StallCell
+                key={s.id}
+                stall={s}
+                zone={zone}
+                taken={takenIds.has(s.id)}
+                isSelected={selected?.id === s.id}
+                onSelect={onSelect}
+                wide
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StallCell({
   stall,
   zone,
   taken,
   isSelected,
   onSelect,
+  wide,
+  fill,
 }: {
   stall: StallDef;
   zone: StallZone;
   taken: boolean;
   isSelected: boolean;
   onSelect: (s: StallDef) => void;
+  wide?: boolean;
+  fill?: boolean;
 }) {
-  const base =
-    "relative aspect-square min-h-[34px] rounded-md border flex items-center justify-center text-xs font-black transition-all select-none";
+  const base = `relative w-full ${
+    fill ? "flex-1 min-h-[34px]" : wide ? "min-h-[44px]" : "min-h-[44px]"
+  } rounded-md border-2 flex items-center justify-center text-sm font-black transition-all select-none`;
   let cls: string;
+  let style: React.CSSProperties | undefined;
   if (taken) {
-    cls = "bg-slate-700 border-slate-600 text-slate-400 cursor-not-allowed";
+    cls = "bg-slate-800 border-slate-600 text-slate-400 cursor-not-allowed";
   } else if (isSelected) {
     cls =
-      "bg-[#EAA500] border-[#EAA500] text-slate-900 ring-2 ring-[#EAA500] ring-offset-2 ring-offset-[#03142A] cursor-pointer";
+      "bg-[#EAA500] border-[#EAA500] text-slate-900 ring-2 ring-[#EAA500] ring-offset-2 cursor-pointer";
+    style = { ["--tw-ring-offset-color" as string]: CANVAS };
   } else {
     cls = `${zone.available} cursor-pointer`;
   }
@@ -670,8 +783,9 @@ function StallCell({
       onClick={() => onSelect(stall)}
       title={taken ? `${stall.label} — Booked` : `${stall.label} — Available`}
       className={`${base} ${cls}`}
+      style={style}
     >
-      {taken ? <Lock className="w-3 h-3" /> : stall.number}
+      {taken ? <Lock className="w-3.5 h-3.5" /> : `${stall.number}.`}
     </button>
   );
 }
